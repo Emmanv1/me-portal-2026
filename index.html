@@ -273,8 +273,11 @@ async function sbDelete(t,q){
 
 // Local storage for offline/no-supabase
 const LS_KEY = 'me_obs_2026';
+const LS_IMPORT_KEY = 'me_imported_2026';
 function lsSave(records){ try{localStorage.setItem(LS_KEY,JSON.stringify(records));}catch(e){} }
 function lsLoad(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return[];} }
+function lsLoadImported(){ try{return JSON.parse(localStorage.getItem(LS_IMPORT_KEY)||'[]');}catch(e){return[];} }
+function lsSaveImported(records){ try{localStorage.setItem(LS_IMPORT_KEY,JSON.stringify(records));}catch(e){} }
 
 // ================================================================
 // STATE
@@ -1191,6 +1194,7 @@ async function renderMySubs(){
 
   mc.innerHTML=`<div class="page-title">📋 My Submissions</div>
     <div class="page-sub">${CU.class_assigned} — ${subs.length} record(s)</div>
+    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:12px">💡 <b>Tip:</b> Click <b>⬇️ Export</b> on each submission to download a JSON file. Send this file to the Super Administrator so they can include your data in the consolidated report.</div>`:''}
     ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No submissions yet. Go to 📝 Observation Form to encode your observation.</p></div>`:`
     <div class="card"><table>
       <tr><th>Training Day</th><th>Date</th><th>Status</th><th>Overall Rating</th><th>Updated</th><th>Action</th></tr>
@@ -1205,6 +1209,7 @@ async function renderMySubs(){
           <td style="display:flex;gap:5px">
             <button class="btn btn-primary btn-sm" onclick="viewIndvSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁 View</button>
             <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️ PDF</button>
+            <button class="btn btn-sm" style="background:#37474f;color:#fff" onclick="exportSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">⬇️ Export</button>
           </td>
         </tr>`;
       }).join('')}
@@ -1226,6 +1231,17 @@ window.printSubReport=function(sub){
   printMyReport();
 };
 
+window.exportSub=function(sub){
+  const json=JSON.stringify([sub],null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`ME_${(sub.class_name||'').replace(/\s/g,'_')}_${(sub.training_day||'').replace(/\s/g,'_')}_${sub.obs_date||'exported'}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+};
+
 // ================================================================
 // ADMIN: DASHBOARD
 // ================================================================
@@ -1238,7 +1254,19 @@ async function renderDashboard(){
   const officers=ACCOUNTS.filter(a=>a.role==='me_officer');
   mc.innerHTML=`<div class="page-title">📊 Admin Dashboard</div>
     <div class="page-sub">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
-    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:14px">⚠️ <b>Supabase not yet connected.</b> Submissions are saved locally (this browser only). Configure Supabase for multi-device sync.</div>`:''}
+    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:14px">
+      ⚠️ <b>Supabase not yet connected.</b> Submissions are saved locally (this browser only). 
+      Use the <b>⬆️ Import</b> button below to load JSON files exported by M&E Officers, or configure Supabase for automatic multi-device sync.
+      <div style="margin-top:8px">
+        <label class="btn btn-success btn-sm" style="cursor:pointer">
+          ⬆️ Import M&E JSON Files
+          <input type="file" accept=".json" multiple style="display:none" onchange="importSubmissions(this.files)">
+        </label>
+        <button class="btn btn-sm" style="background:#37474f;color:#fff;margin-left:6px" onclick="clearImported()">🗑 Clear Imported Data</button>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">Imported: ${lsLoadImported().length} record(s)</span>
+      </div>
+    </div>`:''}
+    ${IS_SB()?'':`<div class="msg msg-info show" style="display:none"></div>`}
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-lbl">M&amp;E Officers</div><div class="kpi-val">${officers.length}</div><div class="kpi-sub">12 classes</div></div>
       <div class="kpi-card"><div class="kpi-lbl">Submitted</div><div class="kpi-val">${submitted.length}</div><div class="kpi-sub">${drafted.length} drafts</div></div>
@@ -1304,6 +1332,7 @@ async function renderConsolidated(){
     <div class="page-sub">All Classes — Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
     <div class="btn-row" style="margin-bottom:16px">
       <button class="btn btn-pdf" onclick="printConsolidated()">🖨️ Print Consolidated Report / Save PDF</button>
+      <button class="btn btn-sm" style="background:#37474f;color:#fff" onclick="exportAllSubs()">⬇️ Export All Submissions (JSON)</button>
     </div>
     <div class="card"><h3>Regional Overall Rating</h3>
       <div class="overall-box">
@@ -1347,21 +1376,52 @@ async function renderConsolidated(){
     </div>
     <div class="card" id="consFindings"><h3>Consolidated Findings &amp; Recommendations per Category</h3>
       ${CATS.map(c=>{
-        const subs=submitted;
-        const findings=subs.map(s=>s.data?.summary?.findings?.[c.k]).filter(Boolean);
-        const recs=subs.map(s=>s.data?.summary?.recommendations?.[c.k]).filter(Boolean);
+        const catFindings=submitted.filter(s=>s.data?.summary?.findings?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.findings[c.k]}));
+        const catRecs=submitted.filter(s=>s.data?.summary?.recommendations?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.recommendations[c.k]}));
         return`<div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
           <div style="font-weight:700;color:var(--primary);margin-bottom:6px">${c.lbl}</div>
           <div class="fr2">
             <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">FINDINGS FROM ALL CLASSES</div>
-              ${findings.length?findings.map((f,i)=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>Class ${subs[i]?.class_name||''}:</b> ${f}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
+              ${catFindings.length?catFindings.map(f=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>${f.cls} — ${f.day}:</b> ${f.txt}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
             <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">RECOMMENDATIONS FROM ALL CLASSES</div>
-              ${recs.length?recs.map((r,i)=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>Class ${subs[i]?.class_name||''}:</b> ${r}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
+              ${catRecs.length?catRecs.map(r=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>${r.cls} — ${r.day}:</b> ${r.txt}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
           </div>
         </div>`;
       }).join('')}
+    </div>
+    <div class="card"><h3>Per-Day Breakdown (All Classes)</h3>
+      <div style="overflow-x:auto"><table class="cons-table">
+        <tr><th>Class</th><th>Training Day</th><th>Date</th>
+          ${CATS.map(c=>`<th style="min-width:60px;font-size:10px">${c.lbl}</th>`).join('')}
+          <th>Overall</th>
+        </tr>
+        ${submitted.sort((a,b)=>(a.class_name>b.class_name?1:-1)||(a.training_day>b.training_day?1:-1)).map(s=>{
+          const R=computeRatings(s.data);
+          return`<tr>
+            <td><b>${s.class_name}</b></td>
+            <td>${s.training_day}</td>
+            <td>${s.obs_date||'—'}</td>
+            ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(R[c.k])}">${R[c.k]!=null?R[c.k].toFixed(2):'—'}</span></td>`).join('')}
+            <td style="text-align:center"><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
+          </tr>`;
+        }).join('')}
+      </table></div>
     </div>`;
 }
+
+window.exportAllSubs=async function(){
+  const allSubs=await loadAllSubs();
+  const submitted=allSubs.filter(s=>s.status==='submitted');
+  if(!submitted.length){alert('No submitted records to export.');return;}
+  const json=JSON.stringify(submitted,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`ME_Consolidated_All_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+};
 
 window.printConsolidated=async function(){
   const allSubs=await loadAllSubs();
@@ -1475,6 +1535,24 @@ window.printConsolidated=async function(){
       </div>`;
     }).join('')}
 
+    <h2>Per-Day Breakdown (All Classes &amp; Days)</h2>
+    <table>
+      <tr><th>Class</th><th>Day</th><th>Date</th>
+        ${CATS.map(c=>`<th style="font-size:9px">${c.lbl}</th>`).join('')}
+        <th>Overall</th>
+      </tr>
+      ${submitted.sort((a,b)=>(a.class_name>b.class_name?1:-1)||(a.training_day>b.training_day?1:-1)).map(s=>{
+        const R=computeRatings(s.data);
+        return`<tr>
+          <td><b>${s.class_name}</b></td>
+          <td>${s.training_day}</td>
+          <td>${s.obs_date||'—'}</td>
+          ${CATS.map(c=>`<td style="text-align:center">${R[c.k]!=null?R[c.k].toFixed(2):'—'}</td>`).join('')}
+          <td style="text-align:center"><b>${R.overall!=null?R.overall.toFixed(2):'—'}</b></td>
+        </tr>`;
+      }).join('')}
+    </table>
+
     <h2>Rating Scale Reference</h2>
     <table>
       <tr><th>Rating</th><th>Description</th><th>Suggested Immediate Action</th></tr>
@@ -1532,30 +1610,7 @@ window.adminViewSub=function(sub){
     ${buildReportHTML(sub,R,true)}`;
 };
 
-window.viewClassDetail=async function(cls){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div style="color:var(--muted);padding:10px">Loading…</div>`;
-  const subs=(await loadAllSubs()).filter(s=>s.class_name===cls&&s.status==='submitted');
-  mc.innerHTML=`
-    <button class="btn btn-primary btn-sm" onclick="renderDashboard()" style="margin-bottom:12px">← Dashboard</button>
-    <div class="page-title">📋 ${cls} — All Submitted Reports</div>
-    <div class="page-sub">${subs.length} submitted</div>
-    ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No submissions yet for ${cls}.</p></div>`:`
-    <div class="card"><table>
-      <tr><th>Training Day</th><th>Date</th><th>Overall Rating</th><th>Action</th></tr>
-      ${subs.map(s=>{
-        const R=computeRatings(s.data);
-        return`<tr>
-          <td><b>${s.training_day}</b></td><td>${s.obs_date}</td>
-          <td><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'} — ${ratingLabel(R.overall)}</span></td>
-          <td style="display:flex;gap:4px">
-            <button class="btn btn-primary btn-sm" onclick="adminViewSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁 View</button>
-            <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️ PDF</button>
-          </td>
-        </tr>`;
-      }).join('')}
-    </table></div>`}`;
-};
+
 
 // ================================================================
 // ADMIN: MANAGE USERS
@@ -1621,8 +1676,71 @@ window.delUser=async function(id,name){
 };
 
 // ================================================================
-// HELP
 // ================================================================
+// ADMIN: IMPORT / EXPORT UTILITIES
+// ================================================================
+window.importSubmissions=function(files){
+  if(!files||!files.length) return;
+  let imported=lsLoadImported();
+  let count=0;
+  const readers=Array.from(files).map(file=>new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        const records=Array.isArray(data)?data:[data];
+        records.forEach(rec=>{
+          if(!rec.username||!rec.training_day) return;
+          const idx=imported.findIndex(s=>s.username===rec.username&&s.training_day===rec.training_day);
+          if(idx>=0) imported[idx]=rec; else imported.push(rec);
+          count++;
+        });
+      }catch(e){alert('⚠️ Invalid JSON file: '+file.name);}
+      res();
+    };
+    fr.readAsText(file);
+  }));
+  Promise.all(readers).then(()=>{
+    lsSaveImported(imported);
+    alert(`✅ Successfully imported ${count} record(s). Refreshing dashboard...`);
+    renderDashboard();
+  });
+};
+
+window.clearImported=function(){
+  if(!confirm('Clear all imported M&E data? This cannot be undone.')) return;
+  lsSaveImported([]);
+  alert('✅ Imported data cleared.');
+  renderDashboard();
+};
+
+window.viewClassDetail=async function(cls){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML=`<div style="color:var(--muted);padding:10px">Loading…</div>`;
+  const allSubs=await loadAllSubs();
+  const subs=allSubs.filter(s=>s.class_name===cls&&s.status==='submitted');
+  mc.innerHTML=`
+    <button class="btn btn-primary btn-sm" onclick="renderDashboard()" style="margin-bottom:12px">← Dashboard</button>
+    <div class="page-title">📋 ${cls} — Submitted Reports</div>
+    <div class="page-sub">${subs.length} submitted observation(s)</div>
+    ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No submissions yet for ${cls}.</p></div>`:`
+    <div class="card"><table>
+      <tr><th>Training Day</th><th>Date</th><th>Overall Rating</th><th>Description</th><th>Action</th></tr>
+      ${subs.map(s=>{
+        const R=computeRatings(s.data);
+        return`<tr>
+          <td><b>${s.training_day||'—'}</b></td>
+          <td>${s.obs_date||'—'}</td>
+          <td><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
+          <td style="font-size:11px">${ratingLabel(R.overall)}</td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-primary btn-sm" onclick="adminViewSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁 View</button>
+            <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️ PDF</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </table></div>`}`;
+};
 function renderHelp(){
   const mc=document.getElementById('mainContent');
   mc.innerHTML=`<div class="page-title">❓ Help &amp; User Guide</div>
@@ -1667,6 +1785,12 @@ async function loadAllSubs(){
     catch(er){console.warn('DB load failed:',er);}
   }
   if(!subs.length) subs=lsLoad();
+  // Merge with imported subs (superadmin import feature)
+  const imported=lsLoadImported();
+  imported.forEach(imp=>{
+    const idx=subs.findIndex(s=>s.username===imp.username&&s.training_day===imp.training_day);
+    if(idx>=0) subs[idx]=imp; else subs.push(imp);
+  });
   return subs;
 }
 
