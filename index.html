@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DepEd CARAGA — Onsite M&E Portal 2026</title>
+<style>
+:root{
+  --primary:#1a3a5c;--accent:#e8a020;--success:#2e7d32;
+  --danger:#c62828;--warn:#f57f17;--bg:#f0f4f8;
+  --card:#ffffff;--border:#d0d7de;--text:#1c2a3a;
+  --muted:#6b7a8d;--sidebar-w:245px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(135deg,#1a3a5c 0%,#0d2137 55%,#1a4a2c 100%)}
+.login-box{background:#fff;border-radius:16px;padding:40px;width:380px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo h1{font-size:20px;color:var(--primary);font-weight:800;line-height:1.3}
+.login-logo p{font-size:12px;color:var(--muted);margin-top:4px}
+.login-logo .badge-prog{display:inline-block;background:#e8f5e9;color:#2e7d32;
+  padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px}
+.login-box label{display:block;font-size:13px;font-weight:600;color:var(--text);
+  margin-bottom:6px;margin-top:16px}
+.login-box input{width:100%;padding:10px 14px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:14px;transition:.2s}
+.login-box input:focus{border-color:var(--primary);outline:none}
+.btn-login{width:100%;margin-top:24px;padding:12px;background:var(--primary);
+  color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;
+  cursor:pointer;transition:.2s}
+.btn-login:hover{background:#254d78}
+#loginError{color:var(--danger);font-size:13px;margin-top:10px;text-align:center;display:none}
+
+/* APP */
+#app{display:none;height:100vh;overflow:hidden;flex-direction:row}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--primary);color:#fff;
+  display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sidebar-header h2{font-size:11px;font-weight:700;letter-spacing:.5px;opacity:.6;text-transform:uppercase}
+.sidebar-header p{font-size:14px;font-weight:700;margin-top:2px}
+.sidebar-user{padding:10px 16px;background:rgba(0,0,0,.2);font-size:12px;
+  border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-user .su-name{display:block;font-weight:700;font-size:13px;margin-top:2px}
+.sidebar-user .su-role{display:block;font-size:11px;opacity:.7;margin-top:1px}
+.nav-section{padding:10px 16px 4px;font-size:10px;font-weight:700;opacity:.5;
+  text-transform:uppercase;letter-spacing:.8px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 16px;
+  cursor:pointer;font-size:13px;font-weight:500;transition:.15s;
+  border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.1);border-left-color:rgba(255,255,255,.4)}
+.nav-item.active{background:rgba(255,255,255,.15);border-left-color:var(--accent);font-weight:700}
+.logout-btn{margin-top:auto;padding:14px 16px;background:rgba(255,0,0,.15);
+  cursor:pointer;font-size:13px;font-weight:600;border-top:1px solid rgba(255,255,255,.1);transition:.15s}
+.logout-btn:hover{background:rgba(255,0,0,.3)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:24px}
+.page-title{font-size:21px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.loading{font-size:13px;color:var(--muted);padding:20px 0}
+
+/* CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:14px;margin-bottom:22px}
+.kpi-card{background:var(--card);border-radius:10px;padding:16px;
+  border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi-val{font-size:26px;font-weight:800;color:var(--primary);margin:4px 0}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.card{background:var(--card);border-radius:10px;padding:20px;
+  border:1px solid var(--border);margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card h3{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--primary);color:#fff;padding:9px 10px;text-align:left;font-weight:600}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:hover td{background:#f5f8fc}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-met{background:#e8f5e9;color:#2e7d32}
+.badge-below{background:#ffebee;color:#c62828}
+.badge-pending{background:#fff8e1;color:#f57f17}
+
+/* FORMS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:600;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{padding:8px 10px;
+  border:1.5px solid var(--border);border-radius:7px;font-size:13px;transition:.2s;
+  font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  border-color:var(--primary);outline:none}
+.form-group input:disabled,.form-group textarea:disabled{
+  background:#f0f0f0;color:#888;cursor:not-allowed}
+.btn{padding:9px 18px;border:none;border-radius:7px;font-size:13px;
+  font-weight:600;cursor:pointer;transition:.2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#254d78}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#1b5e20}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warn{background:var(--warn);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px}
+.msg{padding:10px 14px;border-radius:7px;font-size:13px;font-weight:600;margin:10px 0}
+.msg-success{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.msg-error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+.msg-info{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+
+/* SECTION TABS */
+.section-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.s-tab{padding:7px 13px;border-radius:20px;border:2px solid var(--primary);
+  background:#fff;color:var(--primary);font-size:12px;font-weight:700;
+  cursor:pointer;transition:.2s}
+.s-tab.active{background:var(--primary);color:#fff}
+.s-tab:hover:not(.active){background:#e8f0f8}
+
+/* RUBRIC / ABCD */
+.rubric-section{background:#f8fafc;border:1px solid var(--border);
+  border-radius:8px;padding:14px;margin-bottom:14px}
+.rubric-label{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px}
+.rubric-desc{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6}
+.abcd-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.abcd-label{display:flex;align-items:center;gap:5px;padding:6px 14px;
+  border:2px solid var(--border);border-radius:20px;cursor:pointer;
+  font-size:12px;font-weight:600;transition:.2s;background:#fff}
+.abcd-label:hover{border-color:var(--primary);background:#e8f0f8}
+.abcd-label input[type="radio"]{accent-color:var(--primary)}
+.abcd-selected{border-color:var(--primary);background:#e8f0f8;color:var(--primary)}
+
+/* CHECKLIST */
+.checklist-item{padding:7px 0;border-bottom:1px solid #f0f4f8}
+.checklist-item:last-child{border-bottom:none}
+.check-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;
+  font-size:12.5px;line-height:1.5}
+.check-label input[type="checkbox"]{margin-top:2px;flex-shrink:0;
+  accent-color:var(--primary);width:15px;height:15px}
+
+/* INCIDENT CARD */
+.incident-card{border:1.5px solid var(--border);border-radius:8px;
+  padding:14px;margin-bottom:12px;background:#fafcff}
+
+/* SUMMARY */
+.summary-category{border:1px solid var(--border);border-radius:8px;
+  padding:14px;margin-bottom:12px}
+.sum-cat-header{display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:10px}
+.sum-cat-header strong{font-size:13px;color:var(--primary)}
+.overall-rating{display:inline-block;padding:12px 28px;border-radius:12px;
+  font-size:36px;font-weight:800}
+.rating-scale-box{background:#f8fafc;border:1px solid var(--border);
+  border-radius:8px;padding:14px;margin-bottom:14px}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  .abcd-group{gap:5px}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>DepEd CARAGA<br>Onsite M&E Portal</h1>
+      <p>Revised Grades 6, 9 &amp; 10 Curriculum Training 2026</p>
+      <span class="badge-prog">M&amp;E &amp; Process Observation System</span>
+    </div>
+    <label>Username</label>
+    <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username">
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password">
+    <button class="btn-login" onclick="doLogin()">🔐 Login</button>
+    <div id="loginError">Invalid username or password.</div>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>DepEd CARAGA</h2>
+      <p>M&amp;E Portal 2026</p>
+    </div>
+    <div class="sidebar-user">
+      <span class="su-name" id="sidebarName">—</span>
+      <span class="su-role" id="sidebarRole">—</span>
+    </div>
+    <div id="sidebarNav"></div>
+    <div class="logout-btn" onclick="doLogout()">🚪 Logout</div>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+
+<script>
+// ============================================================
+// ⚙️ CONFIG — Replace with your Supabase credentials
+// ============================================================
+const SUPABASE_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA';
+
+let currentUser = null;
+let currentSection = 'profile';
+
+// ============================================================
+// SUPABASE HELPERS
+// ============================================================
+async function sbGet(table, query=''){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  if(!r.ok) throw new Error(`GET ${table} failed: ${r.status}`);
+  return r.json();
+}
+async function sbPost(table, data, prefer='return=representation'){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`,{
+    method:'POST',
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,
+      'Content-Type':'application/json','Prefer':prefer},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok) throw new Error(`POST ${table} failed: ${r.status}`);
+  return r.json();
+}
+async function sbPatch(table, query, data){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`,{
+    method:'PATCH',
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,
+      'Content-Type':'application/json','Prefer':'return=representation'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok) throw new Error(`PATCH ${table} failed: ${r.status}`);
+  return r.json();
+}
+async function sbDelete(table, query){
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`,{
+    method:'DELETE',
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin(){
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if(!username||!password){
+    errEl.textContent='Please enter your username and password.';
+    errEl.style.display='block'; return;
+  }
+  try{
+    const users = await sbGet('me_users',
+      `?username=eq.${encodeURIComponent(username)}&password=eq.${encodeURIComponent(password)}&select=*`);
+    if(!users||users.length===0){
+      errEl.textContent='Invalid username or password.';
+      errEl.style.display='block'; return;
+    }
+    currentUser = users[0];
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('sidebarName').textContent = currentUser.name;
+    document.getElementById('sidebarRole').textContent =
+      currentUser.role==='superadmin'
+        ? 'Super Administrator'
+        : `M&E Officer — ${currentUser.class_assigned}`;
+    buildNav();
+    currentUser.role==='superadmin' ? renderAdminDashboard() : renderMyForm();
+  }catch(e){
+    errEl.textContent='Connection error. Check your internet and try again.';
+    errEl.style.display='block';
+  }
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  window._formData=null;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function buildNav(){
+  const nav=document.getElementById('sidebarNav');
+  if(currentUser.role==='superadmin'){
+    nav.innerHTML=`
+      <div class="nav-section">Admin</div>
+      <div class="nav-item active" id="nav_dash" onclick="setNav('nav_dash',renderAdminDashboard)">📊 Dashboard</div>
+      <div class="nav-item" id="nav_subs" onclick="setNav('nav_subs',renderAllSubmissions)">📋 All Submissions</div>
+      <div class="nav-item" id="nav_users" onclick="setNav('nav_users',renderManageUsers)">👤 Manage Users</div>
+      <div class="nav-item" id="nav_help" onclick="setNav('nav_help',renderHelp)">❓ Help</div>`;
+  }else{
+    nav.innerHTML=`
+      <div class="nav-section">M&E Officer</div>
+      <div class="nav-item active" id="nav_form" onclick="setNav('nav_form',renderMyForm)">📝 Observation Form</div>
+      <div class="nav-item" id="nav_mysubs" onclick="setNav('nav_mysubs',renderMySubmissions)">📋 My Submissions</div>
+      <div class="nav-item" id="nav_help" onclick="setNav('nav_help',renderHelp)">❓ Help</div>`;
+  }
+}
+function setNav(id,fn){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById(id);
+  if(el) el.classList.add('active');
+  fn();
+}
+
+// ============================================================
+// FORM DATA STRUCTURE
+// ============================================================
+function initFormData(){
+  window._formData={
+    profile:{
+      pd_title:'Training of Regional Trainers on the Revised Grades 6, 9 & 10 Curriculum',
+      class_name:currentUser.class_assigned||'',
+      obs_date:new Date().toISOString().split('T')[0],
+      me_officer:currentUser.name,
+      num_participants:'',class_manager:'',trainers:'',training_day:'Day 1'
+    },
+    incidents:[],
+    participants:{row1_col:'',row2_col:'',target_pax:'',actual_pax:'',
+      qualified_pax:'',reason_deviation:'',notes:''},
+    design:{col:'',components:{professional_standards:'',learning_objectives:'',
+      session_contents:'',time_allotment:'',logical_sequence:'',
+      program_methodology:'',session_outputs:'',workplace_application:''}},
+    rps:{row1_col:'',row2_col:'',standards:{},standards_notes:'',reason_deviation:''},
+    lrms:{row1_col:'',row2_col:'',row3_col:'',notes:''},
+    pm:{col:'',checklist:{},notes:''},
+    environment:{col:'',checklist:{},notes:''},
+    summary:{
+      findings:{participants:'',design:'',rps:'',lrms:'',pm:'',eval_scheme:'',environment:''},
+      recommendations:{participants:'',design:'',rps:'',lrms:'',pm:'',eval_scheme:'',environment:''}
+    }
+  };
+}
+
+// ============================================================
+// SECTION DEFINITIONS
+// ============================================================
+const SECTIONS=[
+  {key:'profile',label:'1. Profile'},
+  {key:'incidents',label:'2. Critical Incidents'},
+  {key:'participants',label:'3. Participants'},
+  {key:'design',label:'4. Program Design'},
+  {key:'rps',label:'5. Resource Persons'},
+  {key:'lrms',label:'6. LRMs'},
+  {key:'pm',label:'7. Prog. Management'},
+  {key:'environment',label:'8. Environment'},
+  {key:'summary',label:'9. Summary'},
+];
+
+const ABCD_OPTS=[
+  {val:'A',pts:4},{val:'B',pts:3},{val:'C',pts:2},{val:'D',pts:1}
+];
+
+const DESIGN_COMPONENTS=[
+  {key:'professional_standards',label:'Professional Standards'},
+  {key:'learning_objectives',label:'Learning Objectives'},
+  {key:'session_contents',label:'Session Contents'},
+  {key:'time_allotment',label:'Time Allotment'},
+  {key:'logical_sequence',label:'Logical Sequence'},
+  {key:'program_methodology',label:'Program Methodology'},
+  {key:'session_outputs',label:'Session Outputs'},
+  {key:'workplace_application',label:'Workplace Application'},
+];
+
+const RP_STANDARDS=[
+  '1. Session objectives are explained at the beginning of the session.',
+  '2. Resource speakers use recognized best learning practices (motivational/mood-setting activities, etc.).',
+  '3. Sessions are delivered based on the quality assured PD program design to ensure objectives are met.',
+  '4. Appropriate and timely adjustments to content, methodology, and schedule address emerging needs.',
+  '5. Participants are recognized as active learners and engaged in meaningful discussions and activities.',
+  '6a. Deliver accurate content.',
+  '6b. Transition topics in a logical manner.',
+  '6c. Present concepts with clarity and congruence to session objectives and type of participants.',
+  '7a. Deliver sessions consistent with the time allotted.',
+  '7b. Inform participants of the time required for every activity or assessment.',
+  '8a. Encourage participants to be actively engaged in the session.',
+  '8b. Apply clean and appropriate humor in keeping the session lively.',
+  '8c. Observe GEDSI in engaging with participants.',
+  '8d. Sense and address needs, potentials, strengths, and weaknesses of participants.',
+  '8e. Monitor the energy level of participants during sessions.',
+  '8f. Make learning relevant by using real-life examples and activities.',
+  '8g. Utilize a combination of different and engaging methods/activities appropriately.',
+  '8h. Give clear instructions in employing various strategies.',
+  '9a. Ask questions that are clear and focused.',
+  '9b. Ask follow-up questions to clarify participants\' responses.',
+  '9c. Paraphrase questions for clarity.',
+  '9d. Ask higher-order thinking skills questions to elicit participants\' ideas.',
+  '9e. Respond in a fair and timely manner to participants\' questions and answers.',
+  '9f. Listen to participants\' ideas or responses.',
+  '9g. Paraphrase participants\' ideas to confirm what has been said.',
+  '9h. Conduct formative assessments to check understanding of participants.',
+  '10. Establish and maintain a positive/non-threatening and comfortable learning environment.',
+  '11a. Use clear and appropriate language for learners.',
+  '11b. Express ideas with clarity, logic, and correct grammar.',
+  '11c. Use non-verbal communication to reinforce the verbal message.',
+  '11d. Use a well-modulated voice in facilitating the session.',
+  '12. Use appropriate technology with ease and confidence.',
+  '13a. Guide the group to a consensus or conclusion.',
+  '13b. Highlight important results of the activity.',
+  '13c. Generate ideas and concepts from the sharing of participants.',
+  '13d. Identify the relationships between activities.',
+  '14. Exhibit flexibility and adaptability in delivery to ensure appropriate response to unforeseen situations.',
+  '15a. Accept feedback without being defensive and reflect for self-improvement.',
+  '15b. Always observe proper decorum and warm, respectful behavior.',
+  '15c. Relate to others with sensitivity and a caring attitude.',
+  '16. Facilitate a synthesis session to help participants consolidate learning (for Learning Manager).',
+  '17. Prepare learners for learning application and re-entry to workplace through WAP (for Learning Manager).',
+];
+
+const PM_ITEMS=[
+  'Attendance is confirmed through an online registration form.',
+  'Special needs of the participants are noted.',
+  'All quality assured learning resource materials are adequate and readily available.',
+  'There is provision for fast and reliable internet access.',
+  'An option for soft copies of printed learning resource materials is available.',
+  'Adequate session breaks (15-30 min mid-morning/afternoon, 1-hour lunch) are provided timely.',
+  '"Working breaks" are avoided unless limited session time necessitates.',
+  'Adequate health personnel and first aid kit with commonly used medicines are available.',
+  'The PMT promotes good solid waste management ("clean as you go").',
+  'Socially-inclusive, gender-sensitive, non-discriminatory, and non-stereotypical language is used at all times.',
+  'Healthy, nutritious, and adequate meals considering special dietary requirements are provided.',
+  'Zero-tolerance on sexual harassment, bullying, and intimidation; incidents handled within 24 hours.',
+  'Emerging welfare needs of participants, resource speakers, and PMT are immediately addressed.',
+  'The pre-assessment is done according to the quality assured PD program design.',
+  'A short opening program (anthem, prayer, DepEd Quality Policy, welcome, introductions) is facilitated.',
+  'Management of learning at program start (expectations, objectives, matrix, session norms) is facilitated.',
+  'Daily management of learning (nationalistic song, prayer, attendance, energizer, recap, clearing) is facilitated.',
+  'Planned activities are carried out as scheduled unless modifications are necessary.',
+  'The PMT introduces the resource speakers/subject-matter experts.',
+  'Program proceedings and participants\' engagement are monitored and documented.',
+  'Daily debriefing with PMT and resource speakers is carried out and documented.',
+  'The Level 1 evaluation tool is administered at the end of the day.',
+  'The post-assessment is done at the end of the program.',
+];
+
+const ENV_ITEMS=[
+  'Is in an accessible, safe, secure, and peaceful location.',
+  'Spacious enough with adequate number of seats for all participants.',
+  'Is clean, well-lit, and well-ventilated.',
+  'Free from interruptions or unnecessary noise.',
+  'Has facilities for individuals with disabilities or special needs (ramps, signposts, toilets, elevator, etc.).',
+  'Has sufficient number of clean and accessible toilets and washrooms.',
+  'The equipment, tools, and supplies are adequate and readily available.',
+  'There is provision for a fast and reliable internet connection.',
+  'Session rooms are spacious enough to accommodate 30-35 participants. (if applicable)',
+  'Session rooms are arranged according to session objectives and methodologies. (if applicable)',
+  'Session rooms have designated areas for PMT members. (if applicable)',
+  'Session rooms are provided for breakout sessions as indicated in the program design. (if applicable)',
+];
+
+const SUMMARY_CATS=[
+  {key:'participants',label:'Participants'},
+  {key:'design',label:'Learning Design'},
+  {key:'rps',label:'Resource Speakers / Subject-Matter Experts'},
+  {key:'lrms',label:'Learning Resource Materials'},
+  {key:'pm',label:'Program Management'},
+  {key:'eval_scheme',label:'Learning Evaluation Scheme'},
+  {key:'environment',label:'Learning Environment: Face-to-Face'},
+];
+
+// ============================================================
+// M&E OFFICER: RENDER FORM
+// ============================================================
+async function renderMyForm(){
+  const mc=document.getElementById('mainContent');
+  if(!window._formData) initFormData();
+  mc.innerHTML=`
+    <div class="page-title">📝 Onsite M&amp;E &amp; Process Observation Form</div>
+    <div class="page-sub">${currentUser.class_assigned} — Fill in all 9 sections then submit.</div>
+    <div id="formMsg" style="display:none"></div>
+    <div class="section-tabs" id="sectionTabs">
+      ${SECTIONS.map(s=>`<button class="s-tab${s.key===currentSection?' active':''}"
+        onclick="switchSection('${s.key}')">${s.label}</button>`).join('')}
+    </div>
+    <div id="sectionBody"></div>
+    <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
+      <button class="btn btn-success" onclick="submitForm()">📤 Submit Observation</button>
+      <button class="btn" style="background:#607d8b;color:#fff" onclick="loadDraft()">🔄 Load Draft</button>
+    </div>`;
+  renderSection(currentSection);
+}
+
+window.switchSection=function(key){
+  collectCurrentSection();
+  currentSection=key;
+  document.querySelectorAll('.s-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.s-tab').forEach(t=>{
+    if(t.textContent.includes(SECTIONS.find(s=>s.key===key)?.label.split('.')[0].trim()))
+      t.classList.add('active');
+  });
+  // simpler approach: match by onclick attribute pattern
+  document.querySelectorAll('.s-tab').forEach(t=>{
+    if(t.getAttribute('onclick')===`switchSection('${key}')`) t.classList.add('active');
+  });
+  renderSection(key);
+};
+
+function renderSection(key){
+  const body=document.getElementById('sectionBody');
+  if(!body) return;
+  const map={
+    profile:renderProfile,incidents:renderIncidents,
+    participants:renderParticipants,design:renderDesign,
+    rps:renderRPs,lrms:renderLRMs,pm:renderPM,
+    environment:renderEnvironment,summary:renderSummary
+  };
+  body.innerHTML=(map[key]||renderProfile)();
+}
+
+// ---- SECTION 1: PROFILE ----
+function renderProfile(){
+  const d=window._formData.profile;
+  return`<div class="card">
+    <h3>1. Training Profile</h3>
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>PD Program Title</label>
+        <input type="text" id="p_title" value="${esc(d.pd_title)}" placeholder="Training of Regional Trainers on the Revised Grades…">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Training Day</label>
+        <select id="p_day">
+          ${['Day 1','Day 2','Day 3','Day 4','Day 5'].map(x=>`<option${d.training_day===x?' selected':''}>${x}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date of Observation</label>
+        <input type="date" id="p_date" value="${d.obs_date}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Class / Training Room</label>
+        <input type="text" id="p_class" value="${esc(d.class_name)}" disabled>
+      </div>
+      <div class="form-group">
+        <label>M&amp;E Officer</label>
+        <input type="text" id="p_officer" value="${esc(d.me_officer)}" disabled>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Number of Participants</label>
+        <input type="number" id="p_pax" value="${esc(d.num_participants)}" min="0" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Class Manager</label>
+        <input type="text" id="p_cm" value="${esc(d.class_manager)}" placeholder="Full name of Class Manager">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Trainers / Resource Persons</label>
+      <textarea id="p_trainers" rows="2" placeholder="Names of trainers/resource persons (comma-separated)">${esc(d.trainers)}</textarea>
+    </div>
+  </div>`;
+}
+function collectProfile(){
+  const d=window._formData.profile;
+  d.pd_title=val('p_title');d.training_day=val('p_day');
+  d.obs_date=val('p_date');d.num_participants=val('p_pax');
+  d.class_manager=val('p_cm');d.trainers=val('p_trainers');
+}
+
+// ---- SECTION 2: INCIDENTS ----
+function renderIncidents(){
+  const incs=window._formData.incidents;
+  return`<div class="card">
+    <h3>2. Critical Incidents — STAR Form</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Record any remarkable positive or negative event/situation encountered during the training day.</p>
+    <div id="incidentsList">
+      ${incs.length===0
+        ?'<p style="color:var(--muted);font-size:13px;padding:10px 0">No incidents recorded. Click "Add Incident" to begin.</p>'
+        :incs.map(incCard).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="addIncident()">➕ Add Incident</button>
+  </div>`;
+}
+function incCard(inc,i){
+  return`<div class="incident-card" id="inc_${i}">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <strong style="font-size:13px;color:var(--primary)">Incident #${i+1}</strong>
+      <button class="btn btn-danger btn-sm" onclick="removeIncident(${i})">🗑 Remove</button>
+    </div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label>Situation / Task</label>
+      <textarea id="inc_sit_${i}" rows="2" placeholder="Describe the situation or task…">${esc(inc.situation||'')}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:8px">
+      <label>Action Taken</label>
+      <textarea id="inc_act_${i}" rows="2" placeholder="What action was taken…">${esc(inc.action||'')}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Result / Outcome</label>
+      <textarea id="inc_res_${i}" rows="2" placeholder="What was the result or outcome…">${esc(inc.result||'')}</textarea>
+    </div>
+  </div>`;
+}
+window.addIncident=function(){
+  collectIncidents();
+  window._formData.incidents.push({situation:'',action:'',result:''});
+  document.getElementById('sectionBody').innerHTML=renderIncidents();
+};
+window.removeIncident=function(i){
+  collectIncidents();
+  window._formData.incidents.splice(i,1);
+  document.getElementById('sectionBody').innerHTML=renderIncidents();
+};
+function collectIncidents(){
+  window._formData.incidents.forEach((inc,i)=>{
+    inc.situation=val(`inc_sit_${i}`);
+    inc.action=val(`inc_act_${i}`);
+    inc.result=val(`inc_res_${i}`);
+  });
+}
+
+// ---- SECTION 3: PARTICIPANTS ----
+function renderParticipants(){
+  const d=window._formData.participants;
+  return`<div class="card">
+    <h3>3. Participants</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Are the actual participants the same with the target participants of the PD Program?</p>
+    <div class="rubric-section">
+      <div class="rubric-label">3.1 Target vs. Actual Participants Match</div>
+      <div class="abcd-group">${abcdRadio('part_r1',d.row1_col)}</div>
+      <div class="rubric-desc">
+        A = About 91–100% of actual participants are the target participants<br>
+        B = About 81–90% &nbsp;|&nbsp; C = About 51–80% &nbsp;|&nbsp; D = 50% or less
+      </div>
+    </div>
+    <div class="rubric-section">
+      <div class="rubric-label">3.2 Qualification to Selection Criteria</div>
+      <div class="abcd-group">${abcdRadio('part_r2',d.row2_col)}</div>
+      <div class="rubric-desc">
+        A = About 91–100% of actual participants are qualified to the selection criteria<br>
+        B = About 81–90% &nbsp;|&nbsp; C = About 51–80% &nbsp;|&nbsp; D = 50% or less
+      </div>
+    </div>
+    <div class="form-row-3" style="margin-top:14px">
+      <div class="form-group">
+        <label>Target Participants (No.)</label>
+        <input type="number" id="p_target" value="${esc(d.target_pax)}" min="0" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Actual Participants (No.)</label>
+        <input type="number" id="p_actual" value="${esc(d.actual_pax)}" min="0" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>Qualified to Criteria (No.)</label>
+        <input type="number" id="p_qualified" value="${esc(d.qualified_pax)}" min="0" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:10px">
+      <label>Reason/s for Deviation (if any)</label>
+      <textarea id="p_reason" rows="3" placeholder="Explain deviations from the target participant list…">${esc(d.reason_deviation)}</textarea>
+    </div>
+    <div class="form-group" style="margin-top:8px">
+      <label>Additional Observational Notes</label>
+      <textarea id="p_notes" rows="2" placeholder="Other observations…">${esc(d.notes)}</textarea>
+    </div>
+  </div>`;
+}
+function collectParticipants(){
+  const d=window._formData.participants;
+  d.row1_col=radioVal('part_r1');d.row2_col=radioVal('part_r2');
+  d.target_pax=val('p_target');d.actual_pax=val('p_actual');
+  d.qualified_pax=val('p_qualified');
+  d.reason_deviation=val('p_reason');d.notes=val('p_notes');
+}
+
+// ---- SECTION 4: PROGRAM DESIGN ----
+function renderDesign(){
+  const d=window._formData.design;
+  return`<div class="card">
+    <h3>4. Program Design</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">To what extent was the delivered PD Program compliant to the quality assured PD Program Design?</p>
+    <div class="rubric-section">
+      <div class="rubric-label">Overall Compliance Rating</div>
+      <div class="abcd-group">${abcdRadio('design_col',d.col)}</div>
+      <div class="rubric-desc">
+        A = Fully complied; consistent with QA Program Design<br>
+        B = Minimal adjustments in any design aspect<br>
+        C = Minor revisions in design aspects<br>
+        D = Major revisions in design aspects
+      </div>
+    </div>
+    <h4 style="margin:14px 0 10px;font-size:13px;color:var(--primary)">Observational Notes per Design Component:</h4>
+    ${DESIGN_COMPONENTS.map(c=>`
+      <div class="form-group" style="margin-bottom:9px">
+        <label>${c.label}</label>
+        <textarea id="des_${c.key}" rows="2" placeholder="Notes on ${c.label}…">${esc(d.components[c.key]||'')}</textarea>
+      </div>`).join('')}
+  </div>`;
+}
+function collectDesign(){
+  const d=window._formData.design;
+  d.col=radioVal('design_col');
+  DESIGN_COMPONENTS.forEach(c=>d.components[c.key]=val(`des_${c.key}`));
+}
+
+// ---- SECTION 5: RESOURCE PERSONS ----
+function renderRPs(){
+  const d=window._formData.rps;
+  const checked=Object.values(d.standards).filter(Boolean).length;
+  const total=RP_STANDARDS.length;
+  const pct=total?Math.round(checked/total*100):0;
+  return`<div class="card">
+    <h3>5. Resource Persons / Subject-Matter Experts</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">To what extent were the resource speakers compliant to PD Program Delivery Quality Standards?</p>
+    <div class="rubric-section">
+      <div class="rubric-label">5.1 Sessions Delivered by Identified RPs</div>
+      <div class="abcd-group">${abcdRadio('rp_r1',d.row1_col)}</div>
+      <div class="rubric-desc">
+        A = All sessions by identified RPs who attended the Training for Trainers<br>
+        B = Most sessions by identified RPs; alternatives are equally excellent and NEAP was informed<br>
+        C = Minor changes; almost half by different RPs; NEAP not informed<br>
+        D = Major changes; more than half by different RPs; NEAP not informed
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Reason/s for RP Deviation (if any)</label>
+      <textarea id="rp_reason" rows="2" placeholder="Explain deviations from expected resource persons…">${esc(d.reason_deviation)}</textarea>
+    </div>
+    <div class="rubric-section">
+      <div class="rubric-label">5.2 Compliance to Learning Delivery Standards (DM 44, s. 2023)</div>
+      <div class="abcd-group">${abcdRadio('rp_r2',d.row2_col)}</div>
+      <div class="rubric-desc">
+        A = 91–100% of indicators met &nbsp;|&nbsp; B = 81–90% &nbsp;|&nbsp; C = 51–80% &nbsp;|&nbsp; D = 50% or less
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h4 style="color:var(--primary);font-size:13px">Learning Delivery Standards Checklist</h4>
+        <span class="badge ${pct>=91?'badge-met':pct>=51?'badge-pending':'badge-below'}" id="rpBadge">${checked}/${total} (${pct}%)</span>
+      </div>
+      ${RP_STANDARDS.map((std,i)=>`<div class="checklist-item">
+        <label class="check-label">
+          <input type="checkbox" id="rp_${i}" ${d.standards[i]?'checked':''} onchange="updateBadge('rp','rpBadge',${total})">
+          <span>${std}</span>
+        </label>
+      </div>`).join('')}
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>Overall Observational Notes (Resource Persons)</label>
+      <textarea id="rp_notes" rows="3" placeholder="General observations on training delivery quality…">${esc(d.standards_notes)}</textarea>
+    </div>
+  </div>`;
+}
+function collectRPs(){
+  const d=window._formData.rps;
+  d.row1_col=radioVal('rp_r1');d.row2_col=radioVal('rp_r2');
+  d.reason_deviation=val('rp_reason');d.standards_notes=val('rp_notes');
+  RP_STANDARDS.forEach((_,i)=>{const cb=document.getElementById(`rp_${i}`);if(cb)d.standards[i]=cb.checked;});
+}
+
+// ---- SECTION 6: LRMs ----
+function renderLRMs(){
+  const d=window._formData.lrms;
+  const rows=[
+    {rn:'lrm_r1',sel:d.row1_col,lbl:'6.1 Fidelity to Quality-Assured LRMs',
+      desc:'A = Same as QA LRMs, fully compliant | B = Edited but still compliant; NEAP informed | C = 30–50% different; NEAP not informed | D = Major changes; NEAP not informed'},
+    {rn:'lrm_r2',sel:d.row2_col,lbl:'6.2 Alignment of Distributed Materials to Methodology',
+      desc:'A = 91–100% aligned | B = 81–90% | C = 51–80% | D = 50% or less'},
+    {rn:'lrm_r3',sel:d.row3_col,lbl:'6.3 Participants Received Learning Resource Materials',
+      desc:'A = 91–100% received a copy | B = 81–90% | C = 51–80% | D = 50% or less'},
+  ];
+  return`<div class="card">
+    <h3>6. Learning Resource Materials (LRMs)</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">To what extent were the LRMs compliant to the PD LRMs Quality Standards?</p>
+    ${rows.map(r=>`<div class="rubric-section">
+      <div class="rubric-label">${r.lbl}</div>
+      <div class="abcd-group">${abcdRadio(r.rn,r.sel)}</div>
+      <div class="rubric-desc">${r.desc}</div>
+    </div>`).join('')}
+    <div class="form-group" style="margin-top:10px">
+      <label>Observational Notes (LRMs)</label>
+      <textarea id="lrm_notes" rows="3" placeholder="Notes on learning resource materials…">${esc(d.notes)}</textarea>
+    </div>
+  </div>`;
+}
+function collectLRMs(){
+  const d=window._formData.lrms;
+  d.row1_col=radioVal('lrm_r1');d.row2_col=radioVal('lrm_r2');
+  d.row3_col=radioVal('lrm_r3');d.notes=val('lrm_notes');
+}
+
+// ---- SECTION 7: PROGRAM MANAGEMENT ----
+function renderPM(){
+  const d=window._formData.pm;
+  const checked=Object.values(d.checklist).filter(Boolean).length;
+  const total=PM_ITEMS.length;
+  const pct=total?Math.round(checked/total*100):0;
+  return`<div class="card">
+    <h3>7. Program Management</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">To what extent was the Program Management compliant to the PD Program Delivery Quality Standards?</p>
+    <div class="rubric-section">
+      <div class="rubric-label">Overall Program Management Rating</div>
+      <div class="abcd-group">${abcdRadio('pm_col',d.col)}</div>
+      <div class="rubric-desc">A = 91–100% of indicators implemented | B = 81–90% | C = 51–80% | D = 50% or less</div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h4 style="color:var(--primary);font-size:13px">PD Program Quality Standards Checklist (${total} items)</h4>
+        <span class="badge ${pct>=91?'badge-met':pct>=51?'badge-pending':'badge-below'}" id="pmBadge">${checked}/${total} (${pct}%)</span>
+      </div>
+      ${PM_ITEMS.map((item,i)=>`<div class="checklist-item">
+        <label class="check-label">
+          <input type="checkbox" id="pm_${i}" ${d.checklist[i]?'checked':''} onchange="updateBadge('pm','pmBadge',${total})">
+          <span>${item}</span>
+        </label>
+      </div>`).join('')}
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>Observational Notes (Program Management)</label>
+      <textarea id="pm_notes" rows="3" placeholder="Additional observations on program management…">${esc(d.notes)}</textarea>
+    </div>
+  </div>`;
+}
+function collectPM(){
+  const d=window._formData.pm;
+  d.col=radioVal('pm_col');d.notes=val('pm_notes');
+  PM_ITEMS.forEach((_,i)=>{const cb=document.getElementById(`pm_${i}`);if(cb)d.checklist[i]=cb.checked;});
+}
+
+// ---- SECTION 8: ENVIRONMENT ----
+function renderEnvironment(){
+  const d=window._formData.environment;
+  const checked=Object.values(d.checklist).filter(Boolean).length;
+  const total=ENV_ITEMS.length;
+  const pct=total?Math.round(checked/total*100):0;
+  return`<div class="card">
+    <h3>8. Learning Environment: Face-to-Face</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">To what extent was the venue for the face-to-face PD Program compliant to standards?</p>
+    <div class="rubric-section">
+      <div class="rubric-label">Overall Learning Environment Rating</div>
+      <div class="abcd-group">${abcdRadio('env_col',d.col)}</div>
+      <div class="rubric-desc">A = 91–100% of indicators met | B = 81–90% | C = 51–80% | D = 50% or less</div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h4 style="color:var(--primary);font-size:13px">Learning Environment Indicators Checklist (${total} items)</h4>
+        <span class="badge ${pct>=91?'badge-met':pct>=51?'badge-pending':'badge-below'}" id="envBadge">${checked}/${total} (${pct}%)</span>
+      </div>
+      ${ENV_ITEMS.map((item,i)=>`<div class="checklist-item">
+        <label class="check-label">
+          <input type="checkbox" id="env_${i}" ${d.checklist[i]?'checked':''} onchange="updateBadge('env','envBadge',${total})">
+          <span>${item}</span>
+        </label>
+      </div>`).join('')}
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>Observational Notes (Learning Environment)</label>
+      <textarea id="env_notes" rows="3" placeholder="Additional observations on the learning environment…">${esc(d.notes)}</textarea>
+    </div>
+  </div>`;
+}
+function collectEnvironment(){
+  const d=window._formData.environment;
+  d.col=radioVal('env_col');d.notes=val('env_notes');
+  ENV_ITEMS.forEach((_,i)=>{const cb=document.getElementById(`env_${i}`);if(cb)d.checklist[i]=cb.checked;});
+}
+
+// ---- SECTION 9: SUMMARY ----
+function renderSummary(){
+  const d=window._formData.summary;
+  collectAll(); // ensure latest data
+  const ratings=computeSectionRatings();
+  const catRatings={
+    participants:ratings.partRating,design:ratings.designRating,
+    rps:ratings.rpsRating,lrms:ratings.lrmsRating,pm:ratings.pmRating,
+    eval_scheme:null,environment:ratings.envRating,
+  };
+  const vals=Object.values(catRatings).filter(Boolean);
+  const overall=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+
+  return`<div class="card">
+    <h3>9. Summary &amp; Overall Rating</h3>
+    <div class="rating-scale-box">
+      <h4 style="color:var(--primary);margin-bottom:8px;font-size:13px">Rating Scale</h4>
+      <table>
+        <tr><th>Rating</th><th>Description</th><th>Suggested Action</th></tr>
+        <tr><td>3.6 – 4.0</td><td>Fully met all standards &amp; Exceeded Expectations</td><td>Feedback to program owner</td></tr>
+        <tr><td>2.6 – 3.5</td><td>Fully met all agreed standards and expectations</td><td>Feedback to program owner</td></tr>
+        <tr><td>1.6 – 2.4</td><td>Partially met all agreed standards and expectations</td><td>Feedback + conduct debriefing</td></tr>
+        <tr><td>1.0 – 1.5</td><td>Minimal conformance to all agreed standards</td><td>Feedback + conduct debriefing</td></tr>
+      </table>
+    </div>
+    <div style="text-align:center;padding:16px 0 20px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;font-weight:700">OVERALL RATING</div>
+      <div class="overall-rating ${overall?ratingClass(overall):'badge-pending'}">
+        ${overall?overall.toFixed(2):'—'}
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">${overall?ratingLabel(overall):'Complete all sections to compute rating'}</div>
+    </div>
+    <h4 style="color:var(--primary);font-size:13px;margin-bottom:12px">Category Ratings, Findings &amp; Recommendations</h4>
+    ${SUMMARY_CATS.map(cat=>{
+      const r=catRatings[cat.key];
+      return`<div class="summary-category">
+        <div class="sum-cat-header">
+          <strong>${cat.label}</strong>
+          <span class="badge ${r?ratingClass(r):'badge-pending'}">${r?r.toFixed(2):'—'}</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Major Observations &amp; Findings</label>
+            <textarea id="sum_f_${cat.key}" rows="2" placeholder="Key findings…">${esc(d.findings[cat.key]||'')}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Recommendations</label>
+            <textarea id="sum_r_${cat.key}" rows="2" placeholder="Recommendations…">${esc(d.recommendations[cat.key]||'')}</textarea>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function collectSummary(){
+  const d=window._formData.summary;
+  SUMMARY_CATS.forEach(cat=>{
+    d.findings[cat.key]=val(`sum_f_${cat.key}`);
+    d.recommendations[cat.key]=val(`sum_r_${cat.key}`);
+  });
+}
+
+// ---- COLLECT ALL ----
+function collectCurrentSection(){
+  const map={profile:collectProfile,incidents:collectIncidents,
+    participants:collectParticipants,design:collectDesign,
+    rps:collectRPs,lrms:collectLRMs,pm:collectPM,
+    environment:collectEnvironment,summary:collectSummary};
+  (map[currentSection]||function(){})();
+}
+function collectAll(){
+  collectProfile();collectIncidents();collectParticipants();
+  collectDesign();collectRPs();collectLRMs();collectPM();
+  collectEnvironment();collectSummary();
+}
+
+// ---- RATINGS COMPUTATION ----
+function colPts(c){return c==='A'?4:c==='B'?3:c==='C'?2:c==='D'?1:null;}
+function avg(...vals){const v=vals.filter(x=>x!==null&&x!==undefined);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
+function computeSectionRatings(){
+  const fd=window._formData;
+  const p1=colPts(fd.participants.row1_col),p2=colPts(fd.participants.row2_col);
+  const rp1=colPts(fd.rps.row1_col),rp2=colPts(fd.rps.row2_col);
+  const l1=colPts(fd.lrms.row1_col),l2=colPts(fd.lrms.row2_col),l3=colPts(fd.lrms.row3_col);
+  return{
+    partRating:avg(p1,p2),
+    designRating:colPts(fd.design.col),
+    rpsRating:avg(rp1,rp2),
+    lrmsRating:avg(l1,l2,l3),
+    pmRating:colPts(fd.pm.col),
+    envRating:colPts(fd.environment.col),
+  };
+}
+function ratingLabel(r){
+  if(!r)return'—';
+  if(r>=3.6)return`${r.toFixed(2)} — Exceeded Expectations`;
+  if(r>=2.6)return`${r.toFixed(2)} — Fully Met Expectations`;
+  if(r>=1.6)return`${r.toFixed(2)} — Partially Met`;
+  return`${r.toFixed(2)} — Minimal Conformance`;
+}
+function ratingClass(r){
+  if(!r)return'badge-pending';
+  if(r>=2.6)return'badge-met';
+  if(r>=1.6)return'badge-pending';
+  return'badge-below';
+}
+
+// ---- SAVE / SUBMIT / LOAD ----
+async function saveDraft(){
+  collectAll();
+  const msg=showMsg('formMsg','','info');
+  try{
+    const payload=buildPayload('draft');
+    await upsertObservation(payload);
+    showMsg('formMsg','✅ Draft saved successfully!','success');
+  }catch(e){showMsg('formMsg','❌ Save error: '+e.message,'error');}
+}
+async function submitForm(){
+  collectAll();
+  const p=window._formData.profile;
+  if(!p.obs_date||!p.class_manager||!p.trainers){
+    showMsg('formMsg','⚠️ Please complete Date, Class Manager, and Trainers in the Profile section before submitting.','error');
+    return;
+  }
+  if(!confirm('Submit this observation? Once submitted, it will be locked.')) return;
+  try{
+    const payload=buildPayload('submitted');
+    payload.submitted_at=new Date().toISOString();
+    await upsertObservation(payload);
+    showMsg('formMsg','✅ Observation submitted successfully! Thank you.','success');
+    initFormData();
+  }catch(e){showMsg('formMsg','❌ Submit error: '+e.message,'error');}
+}
+async function loadDraft(){
+  try{
+    const day=window._formData?.profile?.training_day||'Day 1';
+    const rows=await sbGet('me_observations',
+      `?username=eq.${encodeURIComponent(currentUser.username)}&training_day=eq.${encodeURIComponent(day)}&order=updated_at.desc&limit=1`);
+    if(!rows||rows.length===0){
+      showMsg('formMsg',`ℹ️ No saved data found for ${day}.`,'info');return;
+    }
+    window._formData=rows[0].data;
+    renderSection(currentSection);
+    showMsg('formMsg',`✅ Loaded ${rows[0].status} — ${rows[0].obs_date}`,'success');
+  }catch(e){showMsg('formMsg','❌ Load error: '+e.message,'error');}
+}
+function buildPayload(status){
+  return{
+    user_id:currentUser.id,username:currentUser.username,
+    class_name:currentUser.class_assigned,
+    training_day:window._formData.profile.training_day,
+    obs_date:window._formData.profile.obs_date,
+    status,data:window._formData,updated_at:new Date().toISOString()
+  };
+}
+async function upsertObservation(payload){
+  const existing=await sbGet('me_observations',
+    `?username=eq.${encodeURIComponent(currentUser.username)}&training_day=eq.${encodeURIComponent(payload.training_day)}&order=updated_at.desc&limit=1`);
+  if(existing&&existing.length>0){
+    await sbPatch('me_observations',`?id=eq.${existing[0].id}`,payload);
+  }else{
+    payload.created_at=new Date().toISOString();
+    await sbPost('me_observations',payload,'return=minimal');
+  }
+}
+
+// ============================================================
+// MY SUBMISSIONS
+// ============================================================
+async function renderMySubmissions(){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="page-title">📋 My Submissions</div><div class="loading">Loading…</div>';
+  const subs=await sbGet('me_observations',
+    `?username=eq.${encodeURIComponent(currentUser.username)}&order=updated_at.desc`);
+  if(!subs||subs.length===0){
+    mc.innerHTML=`<div class="page-title">📋 My Submissions</div>
+      <div class="card"><p style="color:var(--muted)">No records found. Use the Observation Form to encode and submit.</p></div>`;
+    return;
+  }
+  mc.innerHTML=`<div class="page-title">📋 My Submissions</div>
+    <div class="page-sub">${currentUser.class_assigned}</div>
+    <div class="card"><table>
+      <tr><th>Training Day</th><th>Date</th><th>Status</th><th>Last Updated</th><th>Action</th></tr>
+      ${subs.map(s=>`<tr>
+        <td><strong>${s.training_day||'—'}</strong></td>
+        <td>${s.obs_date||'—'}</td>
+        <td><span class="badge ${s.status==='submitted'?'badge-met':'badge-pending'}">${s.status}</span></td>
+        <td>${(s.updated_at||'').split('T')[0]}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="viewReport('${s.id}','my')">👁 View</button></td>
+      </tr>`).join('')}
+    </table></div>`;
+}
+
+// ============================================================
+// ADMIN: DASHBOARD
+// ============================================================
+async function renderAdminDashboard(){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="page-title">📊 Dashboard</div><div class="loading">Loading…</div>';
+  const [subs,users]=await Promise.all([
+    sbGet('me_observations','?order=updated_at.desc'),
+    sbGet('me_users','?role=eq.me_officer&order=class_assigned.asc')
+  ]);
+  const submitted=(subs||[]).filter(s=>s.status==='submitted');
+  const drafted=(subs||[]).filter(s=>s.status==='draft');
+  mc.innerHTML=`<div class="page-title">📊 Admin Dashboard</div>
+    <div class="page-sub">Revised Grades 6, 9 &amp; 10 Curriculum Training 2026 — M&amp;E Overview</div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">M&amp;E Officers</div>
+        <div class="kpi-val">${(users||[]).length}</div><div class="kpi-sub">Across 12 classes</div></div>
+      <div class="kpi-card"><div class="kpi-label">Submitted Reports</div>
+        <div class="kpi-val">${submitted.length}</div><div class="kpi-sub">${drafted.length} drafts pending</div></div>
+      <div class="kpi-card"><div class="kpi-label">Classes Covered</div>
+        <div class="kpi-val">${new Set(submitted.map(s=>s.class_name)).size}</div><div class="kpi-sub">out of 12 classes</div></div>
+      <div class="kpi-card"><div class="kpi-label">Latest Submission</div>
+        <div class="kpi-val" style="font-size:17px">${submitted.length?submitted[0].obs_date||'—':'—'}</div>
+        <div class="kpi-sub">${submitted.length?submitted[0].class_name||'':'No submissions yet'}</div></div>
+    </div>
+    <div class="card"><h3>Class-by-Class Submission Status</h3>
+      <table>
+        <tr><th>Class</th><th>M&amp;E Officer</th><th>Submitted</th><th>Days Covered</th><th>Latest Date</th><th>Action</th></tr>
+        ${(users||[]).map(u=>{
+          const cs=(subs||[]).filter(s=>s.class_name===u.class_assigned);
+          const ss=cs.filter(s=>s.status==='submitted');
+          const days=[...new Set(ss.map(s=>s.training_day))].sort().join(', ');
+          const lat=ss.length?ss[0].obs_date:'—';
+          return`<tr>
+            <td><strong>${u.class_assigned}</strong></td>
+            <td>${u.name}</td>
+            <td><span class="badge ${ss.length>0?'badge-met':'badge-pending'}">${ss.length} report${ss.length!==1?'s':''}</span></td>
+            <td style="font-size:12px">${days||'None yet'}</td>
+            <td>${lat}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="viewClassSubs('${u.class_assigned}')">👁 View</button></td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>`;
+}
+
+// ============================================================
+// ADMIN: ALL SUBMISSIONS
+// ============================================================
+async function renderAllSubmissions(){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="page-title">📋 All Submissions</div><div class="loading">Loading…</div>';
+  const subs=await sbGet('me_observations','?order=updated_at.desc');
+  mc.innerHTML=`<div class="page-title">📋 All Submissions</div>
+    <div class="page-sub">${(subs||[]).length} records total</div>
+    <div class="card"><table>
+      <tr><th>Class</th><th>Training Day</th><th>Date</th><th>Officer</th><th>Status</th><th>Updated</th><th>Action</th></tr>
+      ${(subs||[]).map(s=>`<tr>
+        <td><strong>${s.class_name||'—'}</strong></td>
+        <td>${s.training_day||'—'}</td>
+        <td>${s.obs_date||'—'}</td>
+        <td>${s.username||'—'}</td>
+        <td><span class="badge ${s.status==='submitted'?'badge-met':'badge-pending'}">${s.status}</span></td>
+        <td style="font-size:12px">${(s.updated_at||'').split('T')[0]}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="viewReport('${s.id}','admin')">👁 View</button></td>
+      </tr>`).join('')}
+    </table></div>`;
+}
+
+window.viewClassSubs=async function(className){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="loading">Loading…</div>';
+  const subs=await sbGet('me_observations',`?class_name=eq.${encodeURIComponent(className)}&order=training_day.asc`);
+  mc.innerHTML=`<button class="btn btn-primary btn-sm" onclick="renderAdminDashboard()" style="margin-bottom:14px">← Dashboard</button>
+    <div class="page-title">📋 ${className} — All Records</div>
+    <div class="card"><table>
+      <tr><th>Training Day</th><th>Date</th><th>Status</th><th>Action</th></tr>
+      ${(subs||[]).map(s=>`<tr>
+        <td>${s.training_day||'—'}</td><td>${s.obs_date||'—'}</td>
+        <td><span class="badge ${s.status==='submitted'?'badge-met':'badge-pending'}">${s.status}</span></td>
+        <td><button class="btn btn-primary btn-sm" onclick="viewReport('${s.id}','admin')">👁 View</button></td>
+      </tr>`).join('')}
+    </table></div>`;
+};
+
+// ============================================================
+// VIEW REPORT
+// ============================================================
+window.viewReport=async function(id,origin){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="loading">Loading report…</div>';
+  const rows=await sbGet('me_observations',`?id=eq.${id}`);
+  if(!rows||!rows[0]){mc.innerHTML='<p>Not found.</p>';return;}
+  const sub=rows[0];
+  window._formData=sub.data;
+  const ratings=computeSectionRatings();
+  const catR={participants:ratings.partRating,design:ratings.designRating,
+    rps:ratings.rpsRating,lrms:ratings.lrmsRating,pm:ratings.pmRating,
+    eval_scheme:null,environment:ratings.envRating};
+  const vals=Object.values(catR).filter(Boolean);
+  const overall=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+  const fd=sub.data;
+  const back=origin==='admin'?'renderAllSubmissions()':'renderMySubmissions()';
+
+  const rpC=Object.values(fd.rps?.standards||{}).filter(Boolean).length;
+  const pmC=Object.values(fd.pm?.checklist||{}).filter(Boolean).length;
+  const evC=Object.values(fd.environment?.checklist||{}).filter(Boolean).length;
+
+  mc.innerHTML=`
+    <button class="btn btn-primary btn-sm" onclick="${back}" style="margin-bottom:14px">← Back</button>
+    <div class="page-title">Observation Report — ${sub.class_name} — ${sub.training_day}</div>
+    <div class="page-sub">${sub.obs_date} &nbsp;|&nbsp; Officer: ${sub.username} &nbsp;|&nbsp;
+      Status: <span class="badge ${sub.status==='submitted'?'badge-met':'badge-pending'}">${sub.status}</span></div>
+
+    <div class="card"><h3>Profile</h3><table>
+      <tr><td><b>PD Program</b></td><td colspan="3">${fd.profile?.pd_title||'—'}</td></tr>
+      <tr><td><b>Class</b></td><td>${fd.profile?.class_name||'—'}</td>
+          <td><b>Training Day</b></td><td>${fd.profile?.training_day||'—'}</td></tr>
+      <tr><td><b>Date</b></td><td>${fd.profile?.obs_date||'—'}</td>
+          <td><b>No. of Participants</b></td><td>${fd.profile?.num_participants||'—'}</td></tr>
+      <tr><td><b>Class Manager</b></td><td>${fd.profile?.class_manager||'—'}</td>
+          <td><b>Trainers/RPs</b></td><td>${fd.profile?.trainers||'—'}</td></tr>
+    </table></div>
+
+    <div class="card"><h3>Overall Rating &amp; Category Breakdown</h3>
+      <div style="text-align:center;padding:10px 0 18px">
+        <div class="overall-rating ${overall?ratingClass(overall):'badge-pending'}">${overall?overall.toFixed(2):'—'}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">${overall?ratingLabel(overall):'Incomplete — not all sections rated'}</div>
+      </div>
+      <table><tr><th>Category</th><th>Rating</th><th>Description</th></tr>
+        ${SUMMARY_CATS.map(cat=>{const r=catR[cat.key];return`<tr>
+          <td>${cat.label}</td>
+          <td><span class="badge ${r?ratingClass(r):'badge-pending'}">${r?r.toFixed(2):'—'}</span></td>
+          <td style="font-size:12px">${r?ratingLabel(r):'Not rated'}</td>
+        </tr>`;}).join('')}
+      </table>
+    </div>
+
+    <div class="card"><h3>Checklist Summary</h3><table>
+      <tr><th>Section</th><th>Met</th><th>Total</th><th>%</th></tr>
+      <tr><td>Resource Persons Standards</td><td>${rpC}</td><td>${RP_STANDARDS.length}</td><td>${Math.round(rpC/RP_STANDARDS.length*100)}%</td></tr>
+      <tr><td>Program Management</td><td>${pmC}</td><td>${PM_ITEMS.length}</td><td>${Math.round(pmC/PM_ITEMS.length*100)}%</td></tr>
+      <tr><td>Learning Environment</td><td>${evC}</td><td>${ENV_ITEMS.length}</td><td>${Math.round(evC/ENV_ITEMS.length*100)}%</td></tr>
+    </table></div>
+
+    ${fd.incidents?.length?`<div class="card"><h3>Critical Incidents (${fd.incidents.length})</h3>
+      ${fd.incidents.map((inc,i)=>`<div class="incident-card">
+        <strong>Incident #${i+1}</strong><br>
+        <span style="font-size:12px;color:var(--muted)">Situation:</span> ${inc.situation||'—'}<br>
+        <span style="font-size:12px;color:var(--muted)">Action:</span> ${inc.action||'—'}<br>
+        <span style="font-size:12px;color:var(--muted)">Result:</span> ${inc.result||'—'}
+      </div>`).join('')}</div>`:''}
+
+    <div class="card"><h3>Findings &amp; Recommendations Summary</h3><table>
+      <tr><th>Category</th><th>Major Findings</th><th>Recommendations</th></tr>
+      ${SUMMARY_CATS.map(cat=>`<tr>
+        <td><strong>${cat.label}</strong></td>
+        <td>${fd.summary?.findings?.[cat.key]||'—'}</td>
+        <td>${fd.summary?.recommendations?.[cat.key]||'—'}</td>
+      </tr>`).join('')}
+    </table></div>`;
+};
+
+// ============================================================
+// ADMIN: MANAGE USERS
+// ============================================================
+async function renderManageUsers(){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div class="page-title">👤 Manage Users</div><div class="loading">Loading…</div>';
+  const users=await sbGet('me_users','?order=role.asc,class_assigned.asc');
+  mc.innerHTML=`<div class="page-title">👤 Manage Users</div>
+    <div class="card"><h3>Add New User</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label>
+          <input type="text" id="nu_name" placeholder="Full name of user"></div>
+        <div class="form-group"><label>Username</label>
+          <input type="text" id="nu_user" placeholder="Username (no spaces)"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Password</label>
+          <input type="text" id="nu_pass" placeholder="Password"></div>
+        <div class="form-group"><label>Role</label>
+          <select id="nu_role" onchange="toggleClassWrap()">
+            <option value="me_officer">M&amp;E Officer</option>
+            <option value="superadmin">Super Administrator</option>
+          </select></div>
+      </div>
+      <div id="nu_class_wrap" class="form-group" style="max-width:250px">
+        <label>Assigned Class</label>
+        <select id="nu_class">
+          ${Array.from({length:12},(_,i)=>`<option>Class ${i+1}</option>`).join('')}
+        </select>
+      </div>
+      <div id="addMsg" style="display:none;margin-top:8px"></div>
+      <button class="btn btn-success" style="margin-top:12px" onclick="addUser()">➕ Add User</button>
+    </div>
+    <div class="card"><h3>All Users (${(users||[]).length})</h3>
+      <table><tr><th>Name</th><th>Username</th><th>Role</th><th>Class</th><th>Action</th></tr>
+        ${(users||[]).map(u=>`<tr>
+          <td>${u.name}</td><td>${u.username}</td>
+          <td><span class="badge ${u.role==='superadmin'?'badge-met':'badge-pending'}">${u.role}</span></td>
+          <td>${u.class_assigned||'—'}</td>
+          <td>${u.username!==currentUser.username
+            ?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.name.replace(/'/g,"\\'")}')">🗑</button>`
+            :'<em style="font-size:11px;color:var(--muted)">You</em>'}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+}
+window.toggleClassWrap=function(){
+  const r=document.getElementById('nu_role')?.value;
+  const w=document.getElementById('nu_class_wrap');
+  if(w) w.style.display=r==='superadmin'?'none':'flex';
+};
+window.addUser=async function(){
+  const name=val('nu_name'),username=val('nu_user'),
+    password=val('nu_pass'),role=val('nu_role'),
+    class_assigned=role==='superadmin'?null:val('nu_class');
+  if(!name||!username||!password){
+    showMsgEl('addMsg','⚠️ Name, username, and password are required.','error');return;
+  }
+  try{
+    await sbPost('me_users',{name,username,password,role,class_assigned},'return=minimal');
+    showMsgEl('addMsg',`✅ User "${name}" added!`,'success');
+    setTimeout(renderManageUsers,1500);
+  }catch(e){showMsgEl('addMsg','❌ Error: '+e.message,'error');}
+};
+window.deleteUser=async function(id,name){
+  if(!confirm(`Delete user "${name}"? This cannot be undone.`))return;
+  try{
+    await sbDelete('me_users',`?id=eq.${id}`);
+    renderManageUsers();
+  }catch(e){alert('Error deleting user: '+e.message);}
+};
+
+// ============================================================
+// HELP
+// ============================================================
+function renderHelp(){
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML=`<div class="page-title">❓ Help &amp; User Guide</div>
+  <div class="card"><h3>${currentUser.role==='superadmin'?'Admin Guide':'M&E Officer Guide'}</h3>
+  <div style="font-size:13px;line-height:2.1">
+  ${currentUser.role==='superadmin'?`
+    <p><strong>📊 Dashboard</strong> — See all 12 classes at a glance with submission counts and coverage per training day.</p>
+    <p><strong>📋 All Submissions</strong> — View every submitted or drafted observation from all M&E Officers. Click "View" to see the full report including ratings, checklists, and findings.</p>
+    <p><strong>👤 Manage Users</strong> — Add or remove M&E Officer and Admin accounts. Assign each officer to a specific class.</p>
+  `:`
+    <p><strong>📝 Observation Form</strong> — Fill in all 9 sections using the tabs at the top of the form. Each section corresponds to one sheet of the Onsite M&E and Process Observation Tool.</p>
+    <p><strong>💾 Save Draft</strong> — Saves your progress without submitting. You can continue encoding later by clicking "Load Draft".</p>
+    <p><strong>📤 Submit Observation</strong> — Finalizes and submits your observation to the Regional Office. Once submitted, the record is locked.</p>
+    <p><strong>📋 My Submissions</strong> — View all your encoded and submitted observations with computed ratings.</p>
+    <p><strong>⚠️ Note:</strong> You are assigned to <strong>${currentUser.class_assigned}</strong>. Please encode only the observations for your assigned class.</p>
+  `}
+  </div></div>
+  <div class="card"><h3>Rating Scale Reference</h3>
+  <table><tr><th>Rating</th><th>Description</th><th>Points (A/B/C/D)</th></tr>
+    <tr><td>3.6 – 4.0</td><td>Exceeded Expectations</td><td>A = 4 pts</td></tr>
+    <tr><td>2.6 – 3.5</td><td>Fully Met Expectations</td><td>B = 3 pts</td></tr>
+    <tr><td>1.6 – 2.4</td><td>Partially Met</td><td>C = 2 pts</td></tr>
+    <tr><td>1.0 – 1.5</td><td>Minimal Conformance</td><td>D = 1 pt</td></tr>
+  </table></div>`;
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function val(id){const el=document.getElementById(id);return el?el.value:'';}
+function radioVal(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:'';}
+function abcdRadio(name,selected){
+  return ABCD_OPTS.map(o=>`<label class="abcd-label${selected===o.val?' abcd-selected':''}">
+    <input type="radio" name="${name}" value="${o.val}"${selected===o.val?' checked':''} onchange="syncAbcdStyle(this)">
+    ${o.val} (${o.pts} pts)
+  </label>`).join('');
+}
+window.syncAbcdStyle=function(el){
+  document.querySelectorAll(`input[name="${el.name}"]`).forEach(r=>{
+    r.parentElement.classList.toggle('abcd-selected',r.checked);
+  });
+};
+window.updateBadge=function(prefix,badgeId,total){
+  let count=0;
+  for(let i=0;i<total;i++){const cb=document.getElementById(`${prefix}_${i}`);if(cb&&cb.checked)count++;}
+  const badge=document.getElementById(badgeId);
+  if(!badge)return;
+  const pct=Math.round(count/total*100);
+  badge.textContent=`${count}/${total} (${pct}%)`;
+  badge.className=`badge ${pct>=91?'badge-met':pct>=51?'badge-pending':'badge-below'}`;
+};
+function showMsg(id,text,type){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=text;
+  el.className=`msg msg-${type}`;
+  el.style.display='block';
+  if(type==='success')setTimeout(()=>el.style.display='none',5000);
+}
+function showMsgEl(id,text,type){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML=`<div class="msg msg-${type}" style="display:block">${text}</div>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('loginPass').addEventListener('keydown',e=>{
+  if(e.key==='Enter') doLogin();
+});
+</script>
+</body>
+</html>
