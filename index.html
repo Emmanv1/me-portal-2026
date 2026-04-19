@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DepEd CARAGA — Onsite M&E Portal 2026</title>
+<title>DepEd NCR — Training of Regional Trainers M&E Portal 2026</title>
 <style>
 :root{
   --primary:#1a3a5c;--accent:#e8a020;--success:#2e7d32;
@@ -33,7 +33,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);mi
   color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;
   cursor:pointer;transition:.2s}
 .btn-login:hover{background:#254d78}
-#loginError{color:var(--danger);font-size:13px;margin-top:10px;text-align:center;display:none}
+#loginError{color:var(--danger);font-size:13px;margin-top:10px;text-align:center;display:none;line-height:1.6}
 
 /* APP */
 #app{display:none;height:100vh;overflow:hidden;flex-direction:row}
@@ -168,9 +168,10 @@ tr:hover td{background:#f5f8fc}
 <div id="loginPage">
   <div class="login-box">
     <div class="login-logo">
-      <h1>DepEd CARAGA<br>Onsite M&E Portal</h1>
-      <p>Revised Grades 6, 9 &amp; 10 Curriculum Training 2026</p>
-      <span class="badge-prog">M&amp;E &amp; Process Observation System</span>
+      <h1 style="font-size:17px;line-height:1.4">Training of Regional Trainers<br>on the Revised Grade 6 Curriculum</h1>
+      <p style="font-size:13px;font-weight:700;color:var(--primary);margin-top:6px">Department of Education (DepEd)</p>
+      <p style="font-size:12px;color:var(--muted);margin-top:1px">National Capital Region (NCR)</p>
+      <span class="badge-prog" style="margin-top:8px;display:inline-block">M&amp;E &amp; Process Observation System</span>
     </div>
     <label>Username</label>
     <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username">
@@ -185,8 +186,8 @@ tr:hover td{background:#f5f8fc}
 <div id="app">
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>DepEd CARAGA</h2>
-      <p>M&amp;E Portal 2026</p>
+      <h2>DepEd NCR</h2>
+      <p>Regional Trainers M&amp;E 2026</p>
     </div>
     <div class="sidebar-user">
       <span class="su-name" id="sidebarName">—</span>
@@ -202,8 +203,29 @@ tr:hover td{background:#f5f8fc}
 // ============================================================
 // ⚙️ CONFIG — Replace with your Supabase credentials
 // ============================================================
-const SUPABASE_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA';
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+// ============================================================
+// 🔐 HARDCODED FALLBACK ACCOUNTS
+// These work even if Supabase is unreachable or tables are empty.
+// Update these to match exactly what you inserted in Supabase.
+// ============================================================
+const FALLBACK_USERS = [
+  {id:'fallback-sa',name:'Super Administrator',username:'superadmin',password:'Admin@2026!',role:'superadmin',class_assigned:null},
+  {id:'fallback-1', name:'M&E Officer Class 1', username:'me_class1', password:'Class1@2026', role:'me_officer',class_assigned:'Class 1'},
+  {id:'fallback-2', name:'M&E Officer Class 2', username:'me_class2', password:'Class2@2026', role:'me_officer',class_assigned:'Class 2'},
+  {id:'fallback-3', name:'M&E Officer Class 3', username:'me_class3', password:'Class3@2026', role:'me_officer',class_assigned:'Class 3'},
+  {id:'fallback-4', name:'M&E Officer Class 4', username:'me_class4', password:'Class4@2026', role:'me_officer',class_assigned:'Class 4'},
+  {id:'fallback-5', name:'M&E Officer Class 5', username:'me_class5', password:'Class5@2026', role:'me_officer',class_assigned:'Class 5'},
+  {id:'fallback-6', name:'M&E Officer Class 6', username:'me_class6', password:'Class6@2026', role:'me_officer',class_assigned:'Class 6'},
+  {id:'fallback-7', name:'M&E Officer Class 7', username:'me_class7', password:'Class7@2026', role:'me_officer',class_assigned:'Class 7'},
+  {id:'fallback-8', name:'M&E Officer Class 8', username:'me_class8', password:'Class8@2026', role:'me_officer',class_assigned:'Class 8'},
+  {id:'fallback-9', name:'M&E Officer Class 9', username:'me_class9', password:'Class9@2026', role:'me_officer',class_assigned:'Class 9'},
+  {id:'fallback-10',name:'M&E Officer Class 10',username:'me_class10',password:'Class10@2026',role:'me_officer',class_assigned:'Class 10'},
+  {id:'fallback-11',name:'M&E Officer Class 11',username:'me_class11',password:'Class11@2026',role:'me_officer',class_assigned:'Class 11'},
+  {id:'fallback-12',name:'M&E Officer Class 12',username:'me_class12',password:'Class12@2026',role:'me_officer',class_assigned:'Class 12'},
+];
 
 let currentUser = null;
 let currentSection = 'profile';
@@ -252,32 +274,63 @@ async function doLogin(){
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginError');
+  const btn = document.querySelector('.btn-login');
   errEl.style.display = 'none';
-  if(!username||!password){
-    errEl.textContent='Please enter your username and password.';
-    errEl.style.display='block'; return;
+
+  if(!username || !password){
+    errEl.textContent = '⚠️ Please enter your username and password.';
+    errEl.style.display = 'block'; return;
   }
-  try{
-    const users = await sbGet('me_users',
-      `?username=eq.${encodeURIComponent(username)}&password=eq.${encodeURIComponent(password)}&select=*`);
-    if(!users||users.length===0){
-      errEl.textContent='Invalid username or password.';
-      errEl.style.display='block'; return;
+
+  btn.textContent = '⏳ Logging in…';
+  btn.disabled = true;
+
+  // Step 1: Try hardcoded fallback first (always works)
+  const fallback = FALLBACK_USERS.find(u =>
+    u.username === username && u.password === password
+  );
+
+  // Step 2: If Supabase is configured, also try DB for updated names/passwords
+  let dbUser = null;
+  const isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+
+  if(isConfigured){
+    try{
+      const users = await sbGet('me_users',
+        `?username=eq.${encodeURIComponent(username)}&password=eq.${encodeURIComponent(password)}&select=*`);
+      if(users && users.length > 0) dbUser = users[0];
+    }catch(e){
+      // DB failed — will fall back to hardcoded below
+      console.warn('DB login failed, using fallback. Error:', e.message);
     }
-    currentUser = users[0];
-    document.getElementById('loginPage').style.display='none';
-    document.getElementById('app').style.display='flex';
-    document.getElementById('sidebarName').textContent = currentUser.name;
-    document.getElementById('sidebarRole').textContent =
-      currentUser.role==='superadmin'
-        ? 'Super Administrator'
-        : `M&E Officer — ${currentUser.class_assigned}`;
-    buildNav();
-    currentUser.role==='superadmin' ? renderAdminDashboard() : renderMyForm();
-  }catch(e){
-    errEl.textContent='Connection error. Check your internet and try again.';
-    errEl.style.display='block';
   }
+
+  btn.textContent = '🔐 Login';
+  btn.disabled = false;
+
+  // Use DB user if found, else fallback, else fail
+  const matchedUser = dbUser || fallback;
+
+  if(!matchedUser){
+    if(!isConfigured){
+      errEl.innerHTML = '⚠️ Supabase not configured yet.<br>Please update SUPABASE_URL and SUPABASE_KEY in the HTML file.';
+    } else {
+      errEl.textContent = '❌ Invalid username or password.';
+    }
+    errEl.style.display = 'block'; return;
+  }
+
+  // Login success
+  currentUser = matchedUser;
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent =
+    currentUser.role === 'superadmin'
+      ? '⭐ Super Administrator'
+      : `📋 M&E Officer — ${currentUser.class_assigned}`;
+  buildNav();
+  currentUser.role === 'superadmin' ? renderAdminDashboard() : renderMyForm();
 }
 function doLogout(){
   currentUser=null;
@@ -321,7 +374,7 @@ function setNav(id,fn){
 function initFormData(){
   window._formData={
     profile:{
-      pd_title:'Training of Regional Trainers on the Revised Grades 6, 9 & 10 Curriculum',
+      pd_title:'Training of Regional Trainers on the Revised Grade 6 Curriculum',
       class_name:currentUser.class_assigned||'',
       obs_date:new Date().toISOString().split('T')[0],
       me_officer:currentUser.name,
@@ -1080,7 +1133,7 @@ async function renderAdminDashboard(){
   const submitted=(subs||[]).filter(s=>s.status==='submitted');
   const drafted=(subs||[]).filter(s=>s.status==='draft');
   mc.innerHTML=`<div class="page-title">📊 Admin Dashboard</div>
-    <div class="page-sub">Revised Grades 6, 9 &amp; 10 Curriculum Training 2026 — M&amp;E Overview</div>
+    <div class="page-sub">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">M&amp;E Officers</div>
         <div class="kpi-val">${(users||[]).length}</div><div class="kpi-sub">Across 12 classes</div></div>
