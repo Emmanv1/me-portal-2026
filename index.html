@@ -218,8 +218,11 @@ tr:hover td{background:#f5f8fc}
 // ================================================================
 // CONFIG
 // ================================================================
-const SB_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA';
+// ════════════════════════════════════════════════════════════
+// SUPABASE CONFIG — paste your Project URL and anon key here
+// ════════════════════════════════════════════════════════════
+const SB_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';   // e.g. https://xxxx.supabase.co
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA'; // anon/public key from Settings > API
 const IS_SB  = ()=> SB_URL !== 'YOUR_SUPABASE_URL' && SB_KEY !== 'YOUR_SUPABASE_ANON_KEY';
 
 // ================================================================
@@ -554,6 +557,15 @@ function _lockFormFields(){
 function renderForm(selectedDay){
   if(!FD) initFD();
 
+  // Before switching days, save whatever is currently in the DOM into FD
+  // so the user doesn't lose edits they made on the current section.
+  if(selectedDay && selectedDay !== FORM_DAY){
+    collectSec(CS);
+    // Auto-save the current day as draft before leaving it
+    const curPayload = mkPayload('draft');
+    saveObs(curPayload).catch(()=>{});
+  }
+
   // Use selectedDay arg or preserve FORM_DAY
   if(selectedDay) FORM_DAY = selectedDay;
   FD.meta.training_day = FORM_DAY;
@@ -618,6 +630,12 @@ function renderForm(selectedDay){
 
 function switchSec(k){
   collectSec(CS);
+  // Auto-save draft silently every time the user navigates between sections
+  // so data is never lost on accidental close or refresh.
+  if(CU && CU.role==='me_officer'){
+    const pl=mkPayload('draft');
+    saveObs(pl).catch(()=>{});
+  }
   CS=k;
   // Scope to #stabs only — avoids picking up the Day-selector buttons which also use .stab
   const stabsEl=document.getElementById('stabs');
@@ -936,7 +954,8 @@ function collectEnvi(){
 }
 
 function secSummary(){
-  collectAll();
+  // FD is already current — switchSec() collected the previous section before switching.
+  // Do NOT call collectAll() here — it would wipe non-visible section data.
   const R=computeRatings(FD);
   return`<div class="card">
     <h3>📋 Section 10 — Summary &amp; Overall Rating</h3>
@@ -1001,15 +1020,34 @@ function collectSec(k){
   (m[k]||function(){})();
 }
 function collectAll(){
-  collectProfile();collectIncidents();collectPart();collectDesign();
-  collectRPs();collectLRMs();collectPM();collectEval();collectEnvi();collectSummary();
+  // Each collect fn checks for DOM elements via getElementById/rv before writing to FD,
+  // so non-visible sections are naturally skipped (their elements return null/empty).
+  // We call only the CURRENT section explicitly, plus safe-collect the rest.
+  // Safe wrappers: only overwrite FD if the key DOM element actually exists.
+  _safeCollect('profile',  collectProfile,  'm_date');
+  _safeCollect('incidents',collectIncidents,null,true); // always safe (no DOM deps that zero data)
+  _safeCollect('part',     collectPart,     'p_tar');
+  _safeCollect('design',   collectDesign,   'des_n_professional_standards');
+  _safeCollect('rps',      collectRPs,      'rp_dev');
+  _safeCollect('lrms',     collectLRMs,     'lrm_obs');
+  _safeCollect('pm',       collectPM,       'pm_obs');
+  _safeCollect('eval',     collectEval,     'ev_obs');
+  _safeCollect('envi',     collectEnvi,     'en_obs');
+  _safeCollect('summary',  collectSummary,  'sum_f_part');
+}
+function _safeCollect(secKey, fn, probeId, alwaysRun){
+  // Only collect if the section's DOM is currently rendered (probe element exists),
+  // OR if it's the current section (CS), OR alwaysRun is set.
+  if(alwaysRun || CS===secKey || (probeId && document.getElementById(probeId))){
+    fn();
+  }
 }
 
 // ================================================================
 // SAVE / SUBMIT / LOAD
 // ================================================================
 async function saveDraft(){
-  collectAll();
+  collectSec(CS); // only collect currently visible section — FD already holds other sections
   const msg=document.getElementById('formMsg');
   try{
     const payload=mkPayload('draft');
@@ -1022,7 +1060,7 @@ async function saveDraft(){
   }catch(er){showMsg(msg,'❌ Save error: '+er.message,'error');}
 }
 async function submitForm(){
-  collectAll();
+  collectSec(CS); // only collect the currently visible section — FD already has all others
   const msg=document.getElementById('formMsg');
   if(!FD.meta.class_manager||!FD.meta.trainers){
     showMsg(msg,'⚠️ Please complete Class Manager and Trainers fields in Profile before submitting.','error');return;
@@ -1097,10 +1135,11 @@ async function undoSubmission(){
 
 async function loadDraft(){
   const day=FORM_DAY||FD?.meta?.training_day||'Day 1';
+  const msg=document.getElementById('formMsg');
   try{
     let found=null;
     if(IS_SB()){
-      const rows=await sbGet('me_obs',`?username=eq.${encodeURIComponent(CU.username)}&training_day=eq.${encodeURIComponent(day)}&order=updated_at.desc&limit=1`);
+      const rows=await sbGet('me_observations',`?username=eq.${encodeURIComponent(CU.username)}&training_day=eq.${encodeURIComponent(day)}&order=updated_at.desc&limit=1`);
       if(rows&&rows.length){found=rows[0];FD=JSON.parse(JSON.stringify(found.data));FD.meta.training_day=day;}
     }
     if(!found){
@@ -1124,28 +1163,77 @@ function mkPayload(status){
     status,data:FD,updated_at:new Date().toISOString()};
 }
 async function saveObs(payload){
-  // Always save to localStorage as backup
+  // ── Step 1: Save into the shared localStorage pool (LS_KEY) ──
+  // LS_KEY is read by BOTH M&E officer views AND superadmin loadAllSubs().
+  // All accounts on the same browser share the same localStorage, so the
+  // superadmin will automatically see M&E submissions made in other tabs.
   const local=lsLoad().filter(r=>!(r.username===payload.username&&r.training_day===payload.training_day));
-  local.push(payload);lsSave(local);
-  // Save to Supabase if configured
+  local.push(payload);
+  lsSave(local);
+
+  // ── Step 2: Broadcast to superadmin tabs via BroadcastChannel ──
+  // If the superadmin has the portal open in another tab on the same browser,
+  // they will get a live update without needing to refresh.
+  try{
+    const bc=new BroadcastChannel('me_portal_sync');
+    bc.postMessage({type:'obs_saved',username:payload.username,
+      training_day:payload.training_day,status:payload.status,
+      class_name:payload.class_name,ts:payload.updated_at});
+    bc.close();
+  }catch(e){}
+
+  // ── Step 3: Save to Supabase if configured (multi-device, real-time sync) ──
   if(IS_SB()){
     try{
-      const existing=await sbGet('me_obs',`?username=eq.${encodeURIComponent(payload.username)}&training_day=eq.${encodeURIComponent(payload.training_day)}&limit=1`);
-      if(existing&&existing.length){
-        await sbPatch('me_obs',`?id=eq.${existing[0].id}`,payload);
-      }else{
-        payload.created_at=new Date().toISOString();
-        await sbUpsert('me_obs',payload);
-      }
+      // Use upsert — the unique(username, training_day) constraint handles insert vs update
+      const sbPayload={
+        username: payload.username,
+        class_name: payload.class_name,
+        training_day: payload.training_day,
+        obs_date: payload.obs_date||null,
+        status: payload.status,
+        data: payload.data,
+        updated_at: payload.updated_at,
+      };
+      if(payload.submitted_at) sbPayload.submitted_at=payload.submitted_at;
+      await sbUpsert('me_observations', sbPayload);
     }catch(er){console.warn('Supabase save failed, localStorage backup used:',er.message);}
   }
 }
+
+// ── BroadcastChannel listener — superadmin auto-refresh ──
+// Listens for messages from M&E officer tabs and refreshes the admin view instantly.
+(function initBroadcastListener(){
+  try{
+    const bc=new BroadcastChannel('me_portal_sync');
+    bc.onmessage=function(ev){
+      if(!CU||CU.role!=='superadmin') return;
+      const d=ev.data;
+      if(d&&d.type==='obs_saved'){
+        // Show a toast then refresh current admin view
+        const toast=document.createElement('div');
+        const icon=d.status==='submitted'?'📤':'💾';
+        toast.style.cssText='position:fixed;top:16px;right:16px;background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s';
+        toast.textContent=icon+' '+d.class_name+' — '+d.training_day+' '+d.status;
+        document.body.appendChild(toast);
+        // Refresh whichever admin page is open
+        const active=document.querySelector('.nav-item.active');
+        if(active){
+          if(active.id==='nav_dash') renderDashboard();
+          else if(active.id==='nav_subs') renderAllSubs();
+          else if(active.id==='nav_consol') renderConsolidated();
+        }
+        setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),400);},4000);
+      }
+    };
+  }catch(e){}
+})();
 
 // ================================================================
 // PRINT — INDIVIDUAL
 // ================================================================
 function printMyReport(){
-  collectAll();
+  collectSec(CS); // only collect visible section — FD already has all others
   const R=computeRatings(FD);
   const rpCnt=Object.values(FD.rps.chk).filter(Boolean).length;
   const pmCnt=Object.values(FD.pm.chk).filter(Boolean).length;
@@ -1314,7 +1402,7 @@ async function renderMySubs(){
   mc.innerHTML=`<div class="page-title">📋 My Submissions</div><div class="page-sub">${CU.class_assigned}</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
   let subs=[];
   if(IS_SB()){
-    try{subs=await sbGet('me_obs',`?username=eq.${encodeURIComponent(CU.username)}&order=training_day.asc`)||[];}
+    try{subs=await sbGet('me_observations',`?username=eq.${encodeURIComponent(CU.username)}&order=training_day.asc`)||[];}
     catch(er){console.warn(er);}
   }
   // Also check localStorage
@@ -1917,7 +2005,7 @@ function renderHelp(){
 async function loadAllSubs(){
   let subs=[];
   if(IS_SB()){
-    try{subs=await sbGet('me_obs','?order=class_name.asc,training_day.asc')||[];}
+    try{subs=await sbGet('me_observations','?order=class_name.asc,training_day.asc')||[];}
     catch(er){console.warn('DB load failed, falling back to localStorage:',er);}
   }
   // Always merge localStorage — even with Supabase, local data is more current
@@ -2003,52 +2091,7 @@ function buildReportHTML(sub,R,isAdmin){
     </div>`;
 }
 
-// ================================================================
-// REAL-TIME CROSS-TAB SYNC (same browser/device)
-// When an M&E officer saves/submits in another tab, the superadmin
-// dashboard auto-refreshes to reflect the new data.
-// ================================================================
-let _adminRefreshTimer=null;
-window.addEventListener('storage',function(e){
-  if(e.key!==LS_KEY) return;
-  if(!CU) return;
-
-  if(CU.role==='superadmin'){
-    // Debounce rapid storage events
-    clearTimeout(_adminRefreshTimer);
-    _adminRefreshTimer=setTimeout(()=>{
-      // Show toast notification
-      const toast=document.createElement('div');
-      toast.style.cssText='position:fixed;top:16px;right:16px;background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s';
-      toast.innerHTML='🔄 New data received — refreshing…';
-      document.body.appendChild(toast);
-      // Refresh current admin view
-      const active=document.querySelector('.nav-item.active');
-      if(active){
-        if(active.id==='nav_dash') renderDashboard();
-        else if(active.id==='nav_subs') renderAllSubs();
-        else if(active.id==='nav_consol') renderConsolidated();
-      }
-      setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),400);},3000);
-    },600);
-  } else if(CU.role==='me_officer'){
-    // Update day selector badges if M&E officer is on the form page
-    clearTimeout(_adminRefreshTimer);
-    _adminRefreshTimer=setTimeout(()=>{
-      const allMyRecs=lsLoad().filter(r=>r.username===CU.username);
-      const dayStatus={};
-      allMyRecs.forEach(r=>{dayStatus[r.training_day]=r.status;});
-      document.querySelectorAll('.stab[onclick^="renderForm"]').forEach(btn=>{
-        const match=btn.textContent.trim().match(/(Day \d)/);
-        if(match){
-          const d=match[1];
-          const st=dayStatus[d];
-          btn.innerHTML=(st==='submitted'?'✅ ':st==='draft'?'📝 ':'○ ')+d;
-        }
-      });
-    },300);
-  }
-});
+// Cross-tab sync now handled by BroadcastChannel (see initBroadcastListener above)
 
 // Also poll every 30s for same-device multi-window scenarios
 let _pollTimer=null;
