@@ -218,8 +218,8 @@ tr:hover td{background:#f5f8fc}
 // ================================================================
 // CONFIG
 // ================================================================
-const SB_URL = 'YOUR_SUPABASE_URL';
-const SB_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SB_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA';
 const IS_SB  = ()=> SB_URL !== 'YOUR_SUPABASE_URL' && SB_KEY !== 'YOUR_SUPABASE_ANON_KEY';
 
 // ================================================================
@@ -619,9 +619,13 @@ function renderForm(selectedDay){
 function switchSec(k){
   collectSec(CS);
   CS=k;
-  document.querySelectorAll('.stab').forEach((t,i)=>{
-    t.classList.toggle('active',SECTIONS[i]?.k===k);
-  });
+  // Scope to #stabs only — avoids picking up the Day-selector buttons which also use .stab
+  const stabsEl=document.getElementById('stabs');
+  if(stabsEl){
+    stabsEl.querySelectorAll('.stab').forEach((t,i)=>{
+      t.classList.toggle('active',SECTIONS[i]?.k===k);
+    });
+  }
   renderSec(k);
   document.getElementById('secBody')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
