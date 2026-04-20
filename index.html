@@ -1,1883 +1,650 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DepEd NCR — Training of Regional Trainers M&E Portal 2026</title>
+
 <style>
-/* ===== SCREEN STYLES ===== */
-:root{
-  --primary:#1a3a5c;--accent:#e8a020;--success:#2e7d32;
-  --danger:#c62828;--warn:#f57f17;--bg:#f0f4f8;
-  --card:#fff;--border:#d0d7de;--text:#1c2a3a;
-  --muted:#6b7a8d;--sw:250px;
-}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-
-/* LOGIN */
-#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;
-  background:linear-gradient(135deg,#1a3a5c 0%,#0d2137 55%,#1a4a2c 100%)}
-.login-box{background:#fff;border-radius:16px;padding:40px;width:400px;
-  box-shadow:0 20px 60px rgba(0,0,0,.35)}
-.login-logo{text-align:center;margin-bottom:24px}
-.login-logo h1{font-size:17px;color:var(--primary);font-weight:800;line-height:1.45}
-.login-logo .prog{font-size:13px;font-weight:700;color:var(--primary);margin-top:6px}
-.login-logo .sub{font-size:12px;color:var(--muted);margin-top:2px}
-.login-logo .badge-prog{display:inline-block;background:#e8f5e9;color:#2e7d32;
-  padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-top:8px}
-.login-box label{display:block;font-size:13px;font-weight:600;color:var(--text);
-  margin-bottom:5px;margin-top:14px}
-.login-box input{width:100%;padding:10px 14px;border:1.5px solid var(--border);
-  border-radius:8px;font-size:14px;transition:.2s}
-.login-box input:focus{border-color:var(--primary);outline:none}
-.btn-login{width:100%;margin-top:22px;padding:12px;background:var(--primary);
-  color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;
-  cursor:pointer;transition:.2s}
-.btn-login:hover{background:#254d78}
-.btn-login:disabled{opacity:.6;cursor:not-allowed}
-#loginError{font-size:13px;margin-top:10px;text-align:center;display:none;
-  line-height:1.6;color:var(--danger)}
-
-/* APP */
-#app{display:none;height:100vh;overflow:hidden;flex-direction:row}
-
-/* SIDEBAR */
-.sidebar{width:var(--sw);background:var(--primary);color:#fff;
-  display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.sb-header{padding:16px;border-bottom:1px solid rgba(255,255,255,.15)}
-.sb-header h2{font-size:10px;font-weight:700;letter-spacing:.5px;opacity:.6;text-transform:uppercase}
-.sb-header p{font-size:13px;font-weight:700;margin-top:2px;line-height:1.3}
-.sb-user{padding:10px 16px;background:rgba(0,0,0,.2);font-size:12px;
-  border-bottom:1px solid rgba(255,255,255,.1)}
-.sb-name{display:block;font-weight:700;font-size:13px;margin-top:2px}
-.sb-role{display:block;font-size:11px;opacity:.75;margin-top:1px}
-.nav-sec{padding:8px 16px 3px;font-size:10px;font-weight:700;opacity:.5;
-  text-transform:uppercase;letter-spacing:.8px;margin-top:6px}
-.nav-item{display:flex;align-items:center;gap:8px;padding:10px 16px;
-  cursor:pointer;font-size:13px;font-weight:500;transition:.15s;
-  border-left:3px solid transparent}
-.nav-item:hover{background:rgba(255,255,255,.1);border-left-color:rgba(255,255,255,.3)}
-.nav-item.active{background:rgba(255,255,255,.15);border-left-color:var(--accent);font-weight:700}
-.logout-btn{margin-top:auto;padding:13px 16px;background:rgba(255,0,0,.15);
-  cursor:pointer;font-size:13px;font-weight:600;border-top:1px solid rgba(255,255,255,.1);transition:.15s}
-.logout-btn:hover{background:rgba(255,0,0,.3)}
-
-/* MAIN */
-.main{flex:1;overflow-y:auto;padding:24px}
-.page-title{font-size:20px;font-weight:700;color:var(--primary);margin-bottom:4px}
-.page-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
-
-/* CARDS */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
-.kpi-card{background:var(--card);border-radius:10px;padding:14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.kpi-lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-.kpi-val{font-size:28px;font-weight:800;color:var(--primary);margin:4px 0}
-.kpi-sub{font-size:11px;color:var(--muted)}
-.card{background:var(--card);border-radius:10px;padding:18px;border:1px solid var(--border);margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.card h3{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:12px}
-.card h4{font-size:13px;font-weight:700;color:var(--primary);margin:12px 0 8px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:var(--primary);color:#fff;padding:8px 10px;text-align:left;font-weight:600;font-size:12px}
-td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
-tr:hover td{background:#f5f8fc}
-.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
-.b-met{background:#e8f5e9;color:#2e7d32}
-.b-partial{background:#fff8e1;color:#f57f17}
-.b-low{background:#ffebee;color:#c62828}
-.b-none{background:#f5f5f5;color:#999}
-
-/* FORMS */
-.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.fg label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
-.fg input,.fg select,.fg textarea{padding:8px 10px;border:1.5px solid var(--border);
-  border-radius:7px;font-size:13px;transition:.2s;font-family:inherit;width:100%}
-.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--primary);outline:none}
-.fg input:disabled,.fg textarea:disabled{background:#f5f5f5;color:#888;cursor:not-allowed}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.btn{padding:9px 18px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#254d78}
-.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#1b5e20}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-warn{background:var(--warn);color:#fff}
-.btn-pdf{background:#6a1b9a;color:#fff}.btn-pdf:hover{background:#4a148c}
-.btn-sm{padding:5px 11px;font-size:12px}
-.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
-.msg{padding:10px 14px;border-radius:7px;font-size:13px;font-weight:600;margin:8px 0;display:none}
-.msg-success{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
-.msg-error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
-.msg-info{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
-.show{display:block!important}
-
-/* SECTION TABS */
-.stabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
-.stab{padding:6px 11px;border-radius:16px;border:2px solid var(--primary);
-  background:#fff;color:var(--primary);font-size:11px;font-weight:700;cursor:pointer;transition:.2s}
-.stab.active{background:var(--primary);color:#fff}
-.stab:hover:not(.active){background:#e8f0f8}
-
-/* RUBRIC */
-.rubric-box{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px}
-.rubric-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px}
-.rubric-desc{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.7;border-top:1px dashed var(--border);padding-top:8px}
-.abcd-group{display:flex;flex-wrap:wrap;gap:6px}
-.abcd-opt{display:flex;align-items:center;gap:5px;padding:7px 14px;border:2px solid var(--border);
-  border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;transition:.2s;background:#fff;
-  user-select:none}
-.abcd-opt:hover{border-color:var(--primary)}
-.abcd-opt.sel{border-color:var(--primary);background:var(--primary);color:#fff}
-.abcd-opt input{display:none}
-
-/* CHECKLIST */
-.chk-item{padding:7px 0;border-bottom:1px solid #f0f4f8;display:flex;align-items:flex-start;gap:8px}
-.chk-item:last-child{border-bottom:none}
-.chk-item input[type=checkbox]{margin-top:2px;flex-shrink:0;accent-color:var(--primary);width:15px;height:15px;cursor:pointer}
-.chk-item label{font-size:12.5px;line-height:1.5;cursor:pointer}
-.chk-count{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-left:8px}
-
-/* INCIDENT */
-.inc-card{border:1.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;background:#fafcff}
-.inc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-
-/* SUMMARY / OVERALL RATING */
-.overall-box{text-align:center;padding:16px 0 20px}
-.overall-num{font-size:52px;font-weight:900;padding:10px 30px;border-radius:14px;display:inline-block}
-.r-exceed{background:#e8f5e9;color:#1b5e20}
-.r-met{background:#e3f2fd;color:#0d47a1}
-.r-partial{background:#fff8e1;color:#e65100}
-.r-low{background:#ffebee;color:#b71c1c}
-.r-none{background:#f5f5f5;color:#777}
-
-/* CONSOLIDATED TABLE */
-.cons-table th,.cons-table td{font-size:11px;padding:6px 8px}
-.cons-table th{font-size:11px}
-
-/* PRINT BUTTON HIGHLIGHT */
-.btn-pdf{box-shadow:0 2px 8px rgba(106,27,154,.3)}
-
-/* ===== PRINT STYLES ===== */
+body{font-family:var(--font-sans);background:transparent}
+input,select,textarea{font-family:var(--font-sans);font-size:13px;color:var(--color-text-primary);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 10px;width:100%;outline:none;transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{border-color:#2563eb}
+input[readonly],textarea[readonly],select:disabled{background:var(--color-background-secondary);cursor:default;color:var(--color-text-secondary)}
+button{font-family:var(--font-sans);cursor:pointer;transition:all 0.15s}
+button:disabled{opacity:0.6;cursor:default}
 @media print{
-  #loginPage,#app>.sidebar,.btn-row,.stabs,.nav-item,.logout-btn,
-  .btn,.msg,#formMsg,#printNotice{display:none!important}
-  #app{display:block!important;height:auto!important}
-  .main{padding:0!important;overflow:visible!important}
-  #mainContent{padding:0!important}
-  #printArea{display:block!important}
-  body{font-size:11px}
-  .card{box-shadow:none!important;margin-bottom:12px!important;padding:12px!important;break-inside:avoid}
-  table{font-size:11px}
-  th{font-size:11px;padding:6px 8px}
-  td{padding:5px 8px}
-  .overall-num{font-size:36px!important;padding:6px 20px!important}
-  .print-header{display:block!important}
-  h1,h2,h3{color:#000!important}
+  #no-print{display:none!important}
+  #print-area{display:block!important}
 }
-.print-header{display:none}
-#printArea{display:none}
 </style>
-</head>
-<body>
 
-<!-- ===== LOGIN ===== -->
-<div id="loginPage">
-  <div class="login-box">
-    <div class="login-logo">
-      <h1>Training of Regional Trainers<br>on the Revised Grade 6 Curriculum</h1>
-      <p class="prog">Department of Education (DepEd)</p>
-      <p class="sub">National Capital Region (NCR)</p>
-      <span class="badge-prog">M&amp;E &amp; Process Observation System</span>
-    </div>
-    <label>Username</label>
-    <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username">
-    <label>Password</label>
-    <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password">
-    <button class="btn-login" id="loginBtn" onclick="doLogin()">🔐 Login</button>
-    <div id="loginError"></div>
-  </div>
-</div>
-
-<!-- ===== APP ===== -->
-<div id="app">
-  <div class="sidebar">
-    <div class="sb-header">
-      <h2>DepEd NCR</h2>
-      <p>Regional Trainers<br>M&amp;E Portal 2026</p>
-    </div>
-    <div class="sb-user">
-      <span class="sb-name" id="sbName">—</span>
-      <span class="sb-role" id="sbRole">—</span>
-    </div>
-    <div id="sbNav"></div>
-    <div class="logout-btn" onclick="doLogout()">🚪 Logout</div>
-  </div>
-  <div class="main" id="mainContent"><div style="padding:20px;color:var(--muted)">Loading…</div></div>
-</div>
+<div id="app" style="min-height:500px"></div>
 
 <script>
-// ================================================================
-// CONFIG
-// ================================================================
-const SB_URL = 'YOUR_SUPABASE_URL';
-const SB_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const IS_SB  = ()=> SB_URL !== 'YOUR_SUPABASE_URL' && SB_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+const ME_ACCTS = Array.from({length:12},(_,i)=>{
+  const n=String(i+1).padStart(2,'0');
+  return{username:`me${n}`,password:'me2024',role:'me',label:`M&E Account ${i+1}`,classNum:i+1};
+});
+const ALL_ACCTS={
+  superadmin:{username:'superadmin',password:'super2024',role:'superadmin',label:'Super Administrator'},
+  ...Object.fromEntries(ME_ACCTS.map(a=>[a.username,a]))
+};
 
-// ================================================================
-// BUILT-IN ACCOUNTS (fallback — always works)
-// ================================================================
-const ACCOUNTS = [
-  {id:'sa',name:'Super Administrator',username:'superadmin',password:'Admin@2026!',role:'superadmin',class_assigned:null},
-  {id:'c1', name:'M&E Officer — Class 1', username:'me_class1', password:'Class1@2026', role:'me_officer',class_assigned:'Class 1'},
-  {id:'c2', name:'M&E Officer — Class 2', username:'me_class2', password:'Class2@2026', role:'me_officer',class_assigned:'Class 2'},
-  {id:'c3', name:'M&E Officer — Class 3', username:'me_class3', password:'Class3@2026', role:'me_officer',class_assigned:'Class 3'},
-  {id:'c4', name:'M&E Officer — Class 4', username:'me_class4', password:'Class4@2026', role:'me_officer',class_assigned:'Class 4'},
-  {id:'c5', name:'M&E Officer — Class 5', username:'me_class5', password:'Class5@2026', role:'me_officer',class_assigned:'Class 5'},
-  {id:'c6', name:'M&E Officer — Class 6', username:'me_class6', password:'Class6@2026', role:'me_officer',class_assigned:'Class 6'},
-  {id:'c7', name:'M&E Officer — Class 7', username:'me_class7', password:'Class7@2026', role:'me_officer',class_assigned:'Class 7'},
-  {id:'c8', name:'M&E Officer — Class 8', username:'me_class8', password:'Class8@2026', role:'me_officer',class_assigned:'Class 8'},
-  {id:'c9', name:'M&E Officer — Class 9', username:'me_class9', password:'Class9@2026', role:'me_officer',class_assigned:'Class 9'},
-  {id:'c10',name:'M&E Officer — Class 10',username:'me_class10',password:'Class10@2026',role:'me_officer',class_assigned:'Class 10'},
-  {id:'c11',name:'M&E Officer — Class 11',username:'me_class11',password:'Class11@2026',role:'me_officer',class_assigned:'Class 11'},
-  {id:'c12',name:'M&E Officer — Class 12',username:'me_class12',password:'Class12@2026',role:'me_officer',class_assigned:'Class 12'},
-];
-
-// ================================================================
-// SUPABASE HELPERS
-// ================================================================
-async function sbGet(t,q=''){
-  const r=await fetch(`${SB_URL}/rest/v1/${t}${q}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-  if(!r.ok) throw new Error(`${t} ${r.status}`);
-  return r.json();
-}
-async function sbUpsert(t,data){
-  const r=await fetch(`${SB_URL}/rest/v1/${t}`,{
-    method:'POST',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
-      'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify(data)
-  });
-  if(!r.ok) throw new Error(`save ${t} ${r.status}`);
-}
-async function sbPatch(t,q,data){
-  const r=await fetch(`${SB_URL}/rest/v1/${t}${q}`,{
-    method:'PATCH',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
-      'Content-Type':'application/json','Prefer':'return=minimal'},
-    body:JSON.stringify(data)
-  });
-  if(!r.ok) throw new Error(`patch ${t} ${r.status}`);
-}
-async function sbDelete(t,q){
-  await fetch(`${SB_URL}/rest/v1/${t}${q}`,{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-}
-
-// Local storage for offline/no-supabase
-const LS_KEY = 'me_obs_2026';
-const LS_IMPORT_KEY = 'me_imported_2026';
-function lsSave(records){ try{localStorage.setItem(LS_KEY,JSON.stringify(records));}catch(e){} }
-function lsLoad(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return[];} }
-function lsLoadImported(){ try{return JSON.parse(localStorage.getItem(LS_IMPORT_KEY)||'[]');}catch(e){return[];} }
-function lsSaveImported(records){ try{localStorage.setItem(LS_IMPORT_KEY,JSON.stringify(records));}catch(e){} }
-
-// ================================================================
-// STATE
-// ================================================================
-let CU = null; // current user
-let CS = 'profile'; // current form section
-let FD = null; // form data
-
-// ================================================================
-// AUTH
-// ================================================================
-async function doLogin(){
-  const u=document.getElementById('loginUser').value.trim();
-  const p=document.getElementById('loginPass').value;
-  const err=document.getElementById('loginError');
-  const btn=document.getElementById('loginBtn');
-  err.style.display='none';
-  if(!u||!p){err.textContent='⚠️ Enter username and password.';err.style.display='block';return;}
-  btn.textContent='⏳ Logging in…';btn.disabled=true;
-
-  // Try DB first, then fallback
-  let found=null;
-  if(IS_SB()){
-    try{
-      const rows=await sbGet('me_users',`?username=eq.${encodeURIComponent(u)}&password=eq.${encodeURIComponent(p)}&select=*`);
-      if(rows&&rows.length) found=rows[0];
-    }catch(e){ console.warn('DB login failed:',e.message); }
-  }
-  if(!found) found=ACCOUNTS.find(a=>a.username===u&&a.password===p)||null;
-
-  btn.textContent='🔐 Login';btn.disabled=false;
-  if(!found){
-    err.textContent='❌ Invalid username or password.';err.style.display='block';return;
-  }
-  CU=found;
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('sbName').textContent=CU.name;
-  document.getElementById('sbRole').textContent=CU.role==='superadmin'?'⭐ Super Administrator':`📋 M&E Officer — ${CU.class_assigned}`;
-  buildNav();
-  CU.role==='superadmin'?renderDashboard():renderForm();
-}
-function doLogout(){
-  CU=null;FD=null;
-  document.getElementById('loginPage').style.display='flex';
-  document.getElementById('app').style.display='none';
-  document.getElementById('loginUser').value='';
-  document.getElementById('loginPass').value='';
-}
-document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-
-// ================================================================
-// NAV
-// ================================================================
-function buildNav(){
-  const n=document.getElementById('sbNav');
-  if(CU.role==='superadmin'){
-    n.innerHTML=`
-      <div class="nav-sec">Admin</div>
-      <div class="nav-item active" id="nav_dash" onclick="nav('nav_dash',renderDashboard)">📊 Dashboard</div>
-      <div class="nav-item" id="nav_consol" onclick="nav('nav_consol',renderConsolidated)">📈 Consolidated Report</div>
-      <div class="nav-item" id="nav_subs" onclick="nav('nav_subs',renderAllSubs)">📋 All Submissions</div>
-      <div class="nav-item" id="nav_users" onclick="nav('nav_users',renderUsers)">👤 Manage Users</div>
-      <div class="nav-item" id="nav_help" onclick="nav('nav_help',renderHelp)">❓ Help</div>`;
-  }else{
-    n.innerHTML=`
-      <div class="nav-sec">M&E Officer</div>
-      <div class="nav-item active" id="nav_form" onclick="nav('nav_form',renderForm)">📝 Observation Form</div>
-      <div class="nav-item" id="nav_mysubs" onclick="nav('nav_mysubs',renderMySubs)">📋 My Submissions</div>
-      <div class="nav-item" id="nav_help" onclick="nav('nav_help',renderHelp)">❓ Help</div>`;
-  }
-}
-function nav(id,fn){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const el=document.getElementById(id);if(el)el.classList.add('active');
-  fn();
-}
-
-// ================================================================
-// FORM DATA MODEL (mirrors Excel exactly)
-// ================================================================
-function initFD(){
-  FD={
-    meta:{class_name:CU.class_assigned,me_officer:CU.name,pd_title:'Training of Regional Trainers on the Revised Grade 6 Curriculum',training_day:'Day 1',obs_date:today(),num_participants:'',class_manager:'',trainers:''},
-    incidents:[],
-    part:{r1:'',r2:'',target:'',actual:'',qualified:'',deviation_reason:'',notes:''},
-    design:{col:'',notes:{professional_standards:'',learning_objectives:'',session_contents:'',time_allotment:'',logical_sequence:'',program_methodology:'',session_outputs:'',workplace_application:''}},
-    rps:{r1:'',r2:'',deviation_reason:'',chk:{},obs_notes:''},
-    lrms:{r1:'',r2:'',r3:'',notes:''},
-    pm:{col:'',chk:{},notes:''},
-    eval:{col:'',notes:''},
-    envi:{col:'',chk:{},notes:''},
-    summary:{findings:{},recommendations:{}}
-  };
-}
-function today(){return new Date().toISOString().split('T')[0];}
-
-// ================================================================
-// FORM SECTIONS CONFIG
-// ================================================================
 const SECTIONS=[
-  {k:'profile',   lbl:'1. Profile'},
-  {k:'incidents', lbl:'2. Incidents'},
-  {k:'part',      lbl:'3. Participants'},
-  {k:'design',    lbl:'4. Program Design'},
-  {k:'rps',       lbl:'5. Resource Persons'},
-  {k:'lrms',      lbl:'6. LRMs'},
-  {k:'pm',        lbl:'7. Prog. Management'},
-  {k:'eval',      lbl:'8. Eval. Scheme'},
-  {k:'envi',      lbl:'9. Environment'},
-  {k:'summary',   lbl:'10. Summary'},
+  {id:1,key:'profile',label:'1. Profile',title:'Section 1 — Training Profile',
+    fields:[
+      {k:'trainingTitle',l:'Training Title / Program Name',t:'text'},
+      {k:'trainingDate',l:'Date of Training',t:'date'},
+      {k:'trainingEndDate',l:'End Date (if multi-day)',t:'date'},
+      {k:'venue',l:'Venue / Location',t:'text'},
+      {k:'duration',l:'Duration (hours)',t:'number'},
+      {k:'trainingType',l:'Type of Training',t:'select',opts:['Seminar','Workshop','Orientation','Forum','Symposium','Other']},
+      {k:'facilitator',l:'Lead Facilitator',t:'text'},
+      {k:'organizer',l:'Organizing Unit / Agency',t:'text'},
+      {k:'fundingSource',l:'Funding Source',t:'text'},
+      {k:'profileRemarks',l:'Remarks',t:'textarea'},
+    ]},
+  {id:2,key:'incidents',label:'2. Incidents',title:'Section 2 — Incidents Observed',
+    fields:[
+      {k:'hasIncidents',l:'Any incidents observed?',t:'select',opts:['No','Yes']},
+      {k:'incidentDesc',l:'Description of Incident(s)',t:'textarea'},
+      {k:'incidentTime',l:'Time of Incident',t:'text'},
+      {k:'affectedPersons',l:'Persons Affected',t:'textarea'},
+      {k:'actionsTaken',l:'Immediate Actions Taken',t:'textarea'},
+      {k:'followUpNeeded',l:'Follow-up Needed?',t:'select',opts:['No','Yes']},
+      {k:'followUpDetails',l:'Follow-up Details / Recommendations',t:'textarea'},
+    ]},
+  {id:3,key:'participants',label:'3. Participants',title:'Section 3 — Participants',
+    fields:[
+      {k:'totalParticipants',l:'Total No. of Participants',t:'number'},
+      {k:'male',l:'Male',t:'number'},
+      {k:'female',l:'Female',t:'number'},
+      {k:'pwd',l:'Persons with Disability (PWD)',t:'number'},
+      {k:'ip',l:'Indigenous Peoples (IP)',t:'number'},
+      {k:'soloParents',l:'Solo Parents',t:'number'},
+      {k:'targetMet',l:'Target vs Actual',t:'select',opts:['Met','Exceeded','Not Met','N/A']},
+      {k:'participantRemarks',l:'Attendance Observations / Remarks',t:'textarea'},
+    ]},
+  {id:4,key:'programDesign',label:'4. Program Design',title:'Section 4 — Program Design',
+    fields:[
+      {k:'objectivesClarity',l:'Clarity of Objectives',t:'rating'},
+      {k:'contentRelevance',l:'Relevance of Content',t:'rating'},
+      {k:'methodology',l:'Appropriateness of Methodology',t:'rating'},
+      {k:'sequencing',l:'Logical Flow & Sequencing',t:'rating'},
+      {k:'timeAlloc',l:'Time Allocation per Topic',t:'rating'},
+      {k:'pdComments',l:'Comments & Observations',t:'textarea'},
+    ]},
+  {id:5,key:'resourcePersons',label:'5. Resource Persons',title:'Section 5 — Resource Persons',
+    fields:[
+      {k:'rp1Name',l:'Resource Person 1 — Name',t:'text'},
+      {k:'rp1Topic',l:'RP1 — Topic Handled',t:'text'},
+      {k:'rp1Mastery',l:'RP1 — Subject Mastery',t:'rating'},
+      {k:'rp1Delivery',l:'RP1 — Delivery & Facilitation',t:'rating'},
+      {k:'rp1Engagement',l:'RP1 — Participant Engagement',t:'rating'},
+      {k:'rp2Name',l:'Resource Person 2 — Name',t:'text'},
+      {k:'rp2Topic',l:'RP2 — Topic Handled',t:'text'},
+      {k:'rp2Mastery',l:'RP2 — Subject Mastery',t:'rating'},
+      {k:'rp2Delivery',l:'RP2 — Delivery & Facilitation',t:'rating'},
+      {k:'rp2Engagement',l:'RP2 — Participant Engagement',t:'rating'},
+      {k:'rpComments',l:'Overall Comments on Resource Persons',t:'textarea'},
+    ]},
+  {id:6,key:'lrms',label:'6. LRMs',title:'Section 6 — Learning Resource Materials (LRMs)',
+    fields:[
+      {k:'lrmTypes',l:'Types of LRMs Used',t:'textarea'},
+      {k:'lrmAdequacy',l:'Adequacy of LRMs',t:'rating'},
+      {k:'lrmRelevance',l:'Relevance to Objectives',t:'rating'},
+      {k:'lrmQuality',l:'Quality & Clarity',t:'rating'},
+      {k:'lrmAccess',l:'Accessibility to Participants',t:'rating'},
+      {k:'lrmComments',l:'Comments & Suggestions',t:'textarea'},
+    ]},
+  {id:7,key:'progManagement',label:'7. Prog. Management',title:'Section 7 — Program Management',
+    fields:[
+      {k:'registration',l:'Registration Process',t:'rating'},
+      {k:'timeManagement',l:'Adherence to Schedule',t:'rating'},
+      {k:'logistics',l:'Logistics & Support Services',t:'rating'},
+      {k:'coordination',l:'Coordination',t:'rating'},
+      {k:'communication',l:'Communication & Announcements',t:'rating'},
+      {k:'mgmtComments',l:'Comments & Recommendations',t:'textarea'},
+    ]},
+  {id:8,key:'evalScheme',label:'8. Eval. Scheme',title:'Section 8 — Evaluation Scheme',
+    fields:[
+      {k:'evalMethods',l:'Evaluation Methods Used',t:'textarea'},
+      {k:'preTest',l:'Pre-Test Conducted?',t:'select',opts:['Yes','No']},
+      {k:'postTest',l:'Post-Test Conducted?',t:'select',opts:['Yes','No']},
+      {k:'reactionsEval',l:'Reactions Evaluation Conducted?',t:'select',opts:['Yes','No']},
+      {k:'evalAdequacy',l:'Adequacy of Evaluation',t:'rating'},
+      {k:'evalAlignment',l:'Alignment to Objectives',t:'rating'},
+      {k:'evalComments',l:'Comments',t:'textarea'},
+    ]},
+  {id:9,key:'environment',label:'9. Environment',title:'Section 9 — Learning Environment',
+    fields:[
+      {k:'venueSetup',l:'Venue Setup & Arrangement',t:'rating'},
+      {k:'comfort',l:'Comfort Level (seating, space)',t:'rating'},
+      {k:'lighting',l:'Lighting & Ventilation',t:'rating'},
+      {k:'avEquipment',l:'AV Equipment & Technology',t:'rating'},
+      {k:'safety',l:'Safety & Accessibility',t:'rating'},
+      {k:'envComments',l:'Comments',t:'textarea'},
+    ]},
+  {id:10,key:'summary',label:'10. Summary',title:'Section 10 — Summary & Recommendations',
+    fields:[
+      {k:'overallRating',l:'Overall Assessment Rating',t:'rating'},
+      {k:'strengths',l:'Key Strengths Observed',t:'textarea'},
+      {k:'improvements',l:'Areas for Improvement',t:'textarea'},
+      {k:'recommendations',l:'Overall Recommendations',t:'textarea'},
+      {k:'bestPractices',l:'Best Practices to Replicate',t:'textarea'},
+      {k:'observerName',l:'Observer Name',t:'text'},
+      {k:'observerPosition',l:'Observer Position / Designation',t:'text'},
+      {k:'observationDate',l:'Date of Observation Report',t:'date'},
+    ]},
 ];
 
-const CATS=[
-  {k:'part',      lbl:'Participants',                        q:'Are the actual participants the same with the target participants of the program?'},
-  {k:'design',    lbl:'Learning Design',                     q:'To what extent was the delivered PD Program compliant to the quality assured PD Program Design?'},
-  {k:'rps',       lbl:'Resource Speakers / SMEs',            q:'To what extent were the resource speakers compliant to the PD Program Delivery Quality Standards?'},
-  {k:'lrms',      lbl:'Learning Resource Materials',         q:'To what extent were the LRMs compliant to the PD LRMs Quality Standards?'},
-  {k:'pm',        lbl:'Program Management',                  q:'To what extent was the Program Management compliant to the PD Program Delivery Quality Standards?'},
-  {k:'eval',      lbl:'Learning Evaluation Scheme',          q:'To what extent was the evaluation of learning compliant to the quality assured PD Program Design?'},
-  {k:'envi',      lbl:'Learning Environment: Face-to-Face',  q:'To what extent was the venue for the face-to-face PD Program compliant to standards?'},
-];
+const RLABELS={1:'Poor',2:'Fair',3:'Satisfactory',4:'Good',5:'Excellent'};
 
-const DESIGN_COMPS=['Professional Standards','Learning Objectives','Session Contents','Time Allotment','Logical Sequence','Program Methodology','Session Outputs','Workplace Application'];
-const DESIGN_KEYS =['professional_standards','learning_objectives','session_contents','time_allotment','logical_sequence','program_methodology','session_outputs','workplace_application'];
-
-const RP_STDS=[
-  '1. The session objectives are explained at the beginning of the session.',
-  '2. Resource speakers use recognized best learning practices (motivational/mood-setting activities, etc.).',
-  '3. Sessions are delivered based on the quality assured PD program design to ensure session objectives are met and planned outputs are produced.',
-  '4. Appropriate and timely adjustments to content, methodology, and schedule are done to address the emerging needs of learners.',
-  '5. Participants are recognized as active learners and engaged in meaningful discussions and activities. Assistance is given as necessary.',
-  '6a. Deliver accurate content.',
-  '6b. Transition topics in a logical manner.',
-  '6c. Present concepts, information, and ideas with clarity and congruence to session objectives and type of participants.',
-  '7a. Deliver sessions consistent with the time allotted.',
-  '7b. Inform participants of the time required for every activity or assessment.',
-  '8a. Encourage participants to be actively engaged in the session.',
-  '8b. Apply clean and appropriate humor in keeping the session lively.',
-  '8c. Observe GEDSI in engaging with participants.',
-  '8d. Sense and address the needs, potentials, strengths, and weaknesses of participants.',
-  '8e. Monitor the energy level of participants during sessions.',
-  '8f. Make learning relevant by using real-life examples and activities.',
-  '8g. Utilize a combination of different and engaging methods/activities appropriately.',
-  '8h. Give clear instructions in employing various strategies.',
-  '9a. Ask questions that are clear and focused.',
-  '9b. Ask follow-up questions to clarify participants\' responses.',
-  '9c. Paraphrase questions for clarity.',
-  '9d. Ask HOTS questions to elicit participants\' ideas.',
-  '9e. Respond in a fair and timely manner to participants\' questions and answers.',
-  '9f. Listen to the participants\' ideas or responses.',
-  '9g. Paraphrase participants\' ideas to confirm what has been said.',
-  '9h. Conduct formative assessments to check understanding.',
-  '10. Establish and maintain a positive, non-threatening, and comfortable learning environment.',
-  '11a. Use clear and appropriate language for learners.',
-  '11b. Express ideas with clarity, logic, and correct grammar.',
-  '11c. Use non-verbal communication to reinforce the verbal message.',
-  '11d. Use a well-modulated voice in facilitating the session.',
-  '12. Use appropriate technology with ease and confidence.',
-  '13a. Guide the group to a consensus or conclusion.',
-  '13b. Highlight important results of the activity.',
-  '13c. Generate ideas and concepts from the sharing of participants.',
-  '13d. Identify the relationships between activities.',
-  '14. Exhibit flexibility and adaptability in delivery to ensure appropriate response to unforeseen situations.',
-  '15a. Accept feedback without being defensive and reflect for self-improvement.',
-  '15b. Always observe proper decorum and warm, respectful behavior.',
-  '15c. Relate to others with sensitivity and a caring attitude.',
-  '16. Facilitate a synthesis session to help participants consolidate their learning. (Learning Manager)',
-  '17. Prepare learners for learning application and re-entry to the workplace through WAP. (Learning Manager)',
-];
-
-const PM_ITEMS=[
-  'Attendance is confirmed by participants through an online registration form.',
-  'Special needs of the participants are noted.',
-  'All quality assured learning resource materials (slide decks, modules, worksheets, AVPs, etc.) are adequate and readily available.',
-  'There is a provision for fast and reliable internet access.',
-  'An option for soft copies of printed learning resource materials is available.',
-  'Adequate session breaks (15–30 min mid-morning and mid-afternoon for snacks and stretching, and 1 hour for lunch) are provided in a timely manner.',
-  'To the extent possible, "working breaks" are avoided, unless limited session time necessitates these.',
-  'An adequate number of health personnel and a first aid kit with commonly used medicines are available.',
-  'The PMT promotes good solid waste management by adopting the "clean as you go" practice.',
-  'Socially-inclusive, gender-sensitive, non-discriminatory, and non-stereotypical language is used at all times.',
-  'Healthy, nutritious, and adequate meals considering the needs of participants and PMT members with special dietary requirements are provided.',
-  'Zero-tolerance on sexual harassment, bullying, and intimidation is observed; incidents are handled by PMT within 24 hours.',
-  'Emerging welfare needs of participants, resource speakers, and PMT are immediately addressed.',
-  'The pre-assessment is done according to the quality assured PD program design.',
-  'A short opening program (national anthem, ecumenical prayer, DepEd Quality Policy Statement, welcome remarks, and introduction of participants) is facilitated.',
-  'A management of learning at the start of the program (leveling of expectations, program objectives and matrix, session norms) is facilitated.',
-  'A daily management of learning (nationalistic song, prayer, attendance check, energizer, recap, clearing session) is facilitated.',
-  'Planned activities are carried out as scheduled unless modifications are necessary due to emerging needs.',
-  'The PMT introduces the resource speakers/subject-matter experts.',
-  'Program proceedings and participants\' engagement are monitored and documented using the program documentation template.',
-  'Daily debriefing with PMT and resource speakers is carried out and documented.',
-  'The evaluation tool for Level 1 is administered at the end of the day according to the quality assured PD program design.',
-  'The post-assessment is done at the end of the program according to the quality assured PD program design.',
-];
-
-const ENV_ITEMS=[
-  'Is in an accessible, safe, secure, and peaceful location.',
-  'Spacious enough and has an adequate number of seats for the participants.',
-  'Is clean, well-lit, and well-ventilated.',
-  'Free from interruptions or unnecessary noise.',
-  'Has facilities for individuals with disabilities or special needs (e.g., ramps, signposts, toilets, reception, parking, elevator, etc.).',
-  'Has a sufficient number of clean and accessible toilets and washrooms.',
-  'The equipment/tools/supplies are adequate and readily available.',
-  'There is a provision for a fast and reliable internet connection.',
-  'Session rooms are spacious enough and can accommodate 30–35 participants. (if applicable)',
-  'Session rooms are arranged according to the session objectives and methodologies. (if applicable)',
-  'Session rooms have designated areas for the members of the PMT. (if applicable)',
-  'Session rooms are provided for breakout sessions as indicated in the Program design. (if applicable)',
-];
-
-const ABCD=[
-  {v:'A',pts:4,lbl:'A (4 pts)'},
-  {v:'B',pts:3,lbl:'B (3 pts)'},
-  {v:'C',pts:2,lbl:'C (2 pts)'},
-  {v:'D',pts:1,lbl:'D (1 pt)'},
-];
-
-// ================================================================
-// RATING UTILITIES
-// ================================================================
-function colPts(c){return c==='A'?4:c==='B'?3:c==='C'?2:c==='D'?1:null;}
-function avg(...vs){const f=vs.filter(x=>x!=null);return f.length?f.reduce((a,b)=>a+b,0)/f.length:null;}
-function ratingClass(r){
-  if(r==null) return 'r-none';
-  if(r>=3.6)  return 'r-exceed';
-  if(r>=2.6)  return 'r-met';
-  if(r>=1.6)  return 'r-partial';
-  return 'r-low';
-}
-function ratingLabel(r){
-  if(r==null) return '—';
-  if(r>=3.6) return 'Exceeded Expectations';
-  if(r>=2.6) return 'Fully Met Expectations';
-  if(r>=1.6) return 'Partially Met';
-  return 'Minimal Conformance';
-}
-function badgeClass(r){
-  if(r==null) return 'b-none';
-  if(r>=3.6)  return 'b-met';
-  if(r>=2.6)  return 'b-met';
-  if(r>=1.6)  return 'b-partial';
-  return 'b-low';
-}
-function computeRatings(fd){
-  if(!fd) return {};
-  const p=avg(colPts(fd.part?.r1),colPts(fd.part?.r2));
-  const d=colPts(fd.design?.col);
-  const rp=avg(colPts(fd.rps?.r1),colPts(fd.rps?.r2));
-  const l=avg(colPts(fd.lrms?.r1),colPts(fd.lrms?.r2),colPts(fd.lrms?.r3));
-  const pm=colPts(fd.pm?.col);
-  const ev=colPts(fd.eval?.col);
-  const en=colPts(fd.envi?.col);
-  const all=[p,d,rp,l,pm,ev,en].filter(x=>x!=null);
-  const overall=all.length?all.reduce((a,b)=>a+b,0)/all.length:null;
-  return{part:p,design:d,rps:rp,lrms:l,pm,eval:ev,envi:en,overall};
+function initData(){
+  const d={};
+  SECTIONS.forEach(s=>s.fields.forEach(f=>{d[f.k]=f.t==='rating'?'3':''}));
+  return d;
 }
 
-// ================================================================
-// RENDER FORM (M&E OFFICER)
-// ================================================================
-function renderForm(){
-  if(!FD) initFD();
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`
-    <div class="page-title">📝 M&E &amp; Process Observation Form</div>
-    <div class="page-sub">${CU.class_assigned} — Fill all 10 sections, then submit.</div>
-    <div id="formMsg" class="msg"></div>
-    <div class="stabs" id="stabs">
-      ${SECTIONS.map(s=>`<button class="stab${s.k===CS?' active':''}" onclick="switchSec('${s.k}')">${s.lbl}</button>`).join('')}
-    </div>
-    <div id="secBody"></div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
-      <button class="btn btn-success" onclick="submitForm()">📤 Submit</button>
-      <button class="btn" style="background:#607d8b;color:#fff" onclick="loadDraft()">🔄 Load Draft</button>
-      <button class="btn btn-pdf" onclick="printMyReport()">🖨️ Print / Save PDF</button>
-    </div>`;
-  renderSec(CS);
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let state={
+  screen:'login',// login | form | superadmin
+  user:null,
+  loginUser:'',loginPass:'',loginErr:'',
+  formData:initData(),
+  formStatus:'empty',// empty|draft|submitted
+  activeSection:1,
+  busy:false,
+  toast:null,
+  superSubs:[],superLoading:true,superSelected:null,superSection:1,superLastUpdate:null,
+  confirmOpen:false,confirmMsg:'',confirmCb:null,
+};
+
+let pollTimer=null;
+let toastTimer=null;
+
+// ─── RENDER ENGINE ─────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById('app');
+  if(!app)return;
+  if(state.screen==='login')app.innerHTML=renderLogin();
+  else if(state.screen==='form')app.innerHTML=renderForm();
+  else if(state.screen==='superadmin')app.innerHTML=renderSuperAdmin();
+  attachEvents();
 }
 
-function switchSec(k){
-  collectSec(CS);
-  CS=k;
-  document.querySelectorAll('.stab').forEach((t,i)=>{
-    t.classList.toggle('active',SECTIONS[i]?.k===k);
-  });
-  renderSec(k);
-  document.getElementById('secBody')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+function showToast(msg,type='success'){
+  clearTimeout(toastTimer);
+  state.toast={msg,type};
+  render();
+  toastTimer=setTimeout(()=>{state.toast=null;render();},3500);
 }
 
-function renderSec(k){
-  const b=document.getElementById('secBody');
-  if(!b)return;
-  const m={profile:secProfile,incidents:secIncidents,part:secPart,
-    design:secDesign,rps:secRPs,lrms:secLRMs,pm:secPM,
-    eval:secEval,envi:secEnvi,summary:secSummary};
-  b.innerHTML=(m[k]||secProfile)();
+function setState(patch){
+  Object.assign(state,patch);
+  render();
 }
 
-// ---- SECTION RENDERS ----
-function secProfile(){
-  const d=FD.meta;
-  return`<div class="card">
-    <h3>📋 Section 1 — Training Profile</h3>
-    <div class="fg"><label>PD Program Title</label>
-      <input type="text" id="m_title" value="${e(d.pd_title)}"></div>
-    <div class="fr2">
-      <div class="fg"><label>Training Day</label>
-        <select id="m_day">${['Day 1','Day 2','Day 3','Day 4','Day 5'].map(x=>`<option${d.training_day===x?' selected':''}>${x}</option>`).join('')}</select></div>
-      <div class="fg"><label>Date of Observation</label>
-        <input type="date" id="m_date" value="${d.obs_date}"></div>
-    </div>
-    <div class="fr2">
-      <div class="fg"><label>Class / Training Room</label>
-        <input type="text" id="m_class" value="${e(d.class_name)}" disabled></div>
-      <div class="fg"><label>M&amp;E Officer</label>
-        <input type="text" id="m_officer" value="${e(d.me_officer)}" disabled></div>
-    </div>
-    <div class="fr2">
-      <div class="fg"><label>Number of Participants</label>
-        <input type="number" id="m_pax" value="${e(d.num_participants)}" min="0" placeholder="0"></div>
-      <div class="fg"><label>Class Manager</label>
-        <input type="text" id="m_cm" value="${e(d.class_manager)}" placeholder="Full name"></div>
-    </div>
-    <div class="fg"><label>Trainers / Resource Persons</label>
-      <textarea id="m_trainers" rows="2" placeholder="Names of trainers (comma-separated)">${e(d.trainers)}</textarea></div>
-  </div>`;
+// ─── STORAGE HELPERS ───────────────────────────────────────────────────────
+async function storageSave(key,val,shared=false){
+  try{await window.storage.set(key,typeof val==='string'?val:JSON.stringify(val),shared);return true;}
+  catch(e){console.error('storage.set error',e);return false;}
 }
-function collectProfile(){
-  FD.meta.pd_title=g('m_title');FD.meta.training_day=g('m_day');
-  FD.meta.obs_date=g('m_date');FD.meta.num_participants=g('m_pax');
-  FD.meta.class_manager=g('m_cm');FD.meta.trainers=g('m_trainers');
-}
-
-function secIncidents(){
-  const incs=FD.incidents;
-  return`<div class="card">
-    <h3>🚨 Section 2 — Critical Incidents (STAR Form)</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">For any remarkable event/situation (positive or negative) encountered during the training day, accomplish the STAR form below.</p>
-    <div id="incList">
-      ${incs.length===0
-        ?`<p style="color:var(--muted);font-size:13px;padding:8px 0">No incidents recorded yet. Click "➕ Add Incident" to begin.</p>`
-        :incs.map(incCard).join('')}
-    </div>
-    <button class="btn btn-warn" style="margin-top:10px" onclick="addInc()">➕ Add Incident</button>
-  </div>`;
-}
-function incCard(inc,i){
-  return`<div class="inc-card" id="ic_${i}">
-    <div class="inc-head"><strong>Incident #${i+1}</strong>
-      <button class="btn btn-danger btn-sm" onclick="removeInc(${i})">🗑 Remove</button></div>
-    <div class="fg"><label>Situation / Task</label>
-      <textarea id="ic_s_${i}" rows="2" placeholder="Describe the situation or task…">${e(inc.situation||'')}</textarea></div>
-    <div class="fg"><label>Action Taken</label>
-      <textarea id="ic_a_${i}" rows="2" placeholder="What action was taken…">${e(inc.action||'')}</textarea></div>
-    <div class="fg"><label>Result / Outcome</label>
-      <textarea id="ic_r_${i}" rows="2" placeholder="What was the result or outcome…">${e(inc.result||'')}</textarea></div>
-  </div>`;
-}
-window.addInc=function(){collectIncidents();FD.incidents.push({situation:'',action:'',result:''});document.getElementById('secBody').innerHTML=secIncidents();};
-window.removeInc=function(i){collectIncidents();FD.incidents.splice(i,1);document.getElementById('secBody').innerHTML=secIncidents();};
-function collectIncidents(){FD.incidents.forEach((inc,i)=>{inc.situation=g(`ic_s_${i}`);inc.action=g(`ic_a_${i}`);inc.result=g(`ic_r_${i}`);});}
-
-function secPart(){
-  const d=FD.part;
-  return`<div class="card">
-    <h3>👥 Section 3 — Participants</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Are the actual participants the same with the target participants of the program?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">3.1 Target vs. Actual Participants Match</div>
-      ${abcd('p_r1',d.r1)}
-      <div class="rubric-desc">
-        <b>A</b> = About 91–100% of the actual participants are the target participants of the PD Program.<br>
-        <b>B</b> = About 81–90% of the actual participants are the target participants of the PD Program.<br>
-        <b>C</b> = About 51–80% of the actual participants are the target participants of the PD Program.<br>
-        <b>D</b> = About 50% or less of the actual participants are the target participants of the PD Program.
-      </div>
-    </div>
-    <div class="rubric-box">
-      <div class="rubric-title">3.2 Qualification to Selection Criteria</div>
-      ${abcd('p_r2',d.r2)}
-      <div class="rubric-desc">
-        <b>A</b> = About 91–100% of the actual participants are qualified to the selection criteria of the PD Program.<br>
-        <b>B</b> = About 81–90% are qualified. &nbsp;|&nbsp; <b>C</b> = About 51–80% are qualified. &nbsp;|&nbsp; <b>D</b> = 50% or less are qualified.
-      </div>
-    </div>
-    <div class="fr3" style="margin-top:12px">
-      <div class="fg"><label>Target Participants (No.)</label><input type="number" id="p_tar" value="${e(d.target)}" min="0" placeholder="0"></div>
-      <div class="fg"><label>Actual Participants (No.)</label><input type="number" id="p_act" value="${e(d.actual)}" min="0" placeholder="0"></div>
-      <div class="fg"><label>Qualified to Criteria (No.)</label><input type="number" id="p_qua" value="${e(d.qualified)}" min="0" placeholder="0"></div>
-    </div>
-    <div class="fg"><label>Reason/s for Deviation</label>
-      <textarea id="p_dev" rows="2" placeholder="Explain if there are deviations from the target participant list…">${e(d.deviation_reason)}</textarea></div>
-    <div class="fg"><label>Additional Observational Notes</label>
-      <textarea id="p_not" rows="2" placeholder="Other observations on participants…">${e(d.notes)}</textarea></div>
-  </div>`;
-}
-function collectPart(){
-  FD.part.r1=rv('p_r1');FD.part.r2=rv('p_r2');
-  FD.part.target=g('p_tar');FD.part.actual=g('p_act');FD.part.qualified=g('p_qua');
-  FD.part.deviation_reason=g('p_dev');FD.part.notes=g('p_not');
-}
-
-function secDesign(){
-  const d=FD.design;
-  return`<div class="card">
-    <h3>🎯 Section 4 — Program Design</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent was the delivered PD Program compliant to the quality assured PD Program Design?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">Overall Program Design Compliance Rating</div>
-      ${abcd('des_col',d.col)}
-      <div class="rubric-desc">
-        <b>A</b> = The delivered PD Program is fully complied with and was consistent with the quality assured PD Program Design.<br>
-        <b>B</b> = The delivered PD Program made minimal adjustments in any design aspect.<br>
-        <b>C</b> = There were minor revisions in the design aspects of the PD Program.<br>
-        <b>D</b> = There were major revisions in the design aspects of the PD Program.
-      </div>
-    </div>
-    <h4>Observational Notes per PD Program Component:</h4>
-    ${DESIGN_COMPS.map((c,i)=>`
-      <div class="fg"><label>${c}</label>
-        <textarea id="des_n_${DESIGN_KEYS[i]}" rows="2" placeholder="Notes on ${c}…">${e(d.notes[DESIGN_KEYS[i]]||'')}</textarea></div>`).join('')}
-  </div>`;
-}
-function collectDesign(){
-  FD.design.col=rv('des_col');
-  DESIGN_KEYS.forEach(k=>{FD.design.notes[k]=g(`des_n_${k}`);});
-}
-
-function secRPs(){
-  const d=FD.rps;
-  const cnt=Object.values(d.chk).filter(Boolean).length;
-  const tot=RP_STDS.length;
-  return`<div class="card">
-    <h3>🎤 Section 5 — Resource Persons / Subject-Matter Experts</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent were the resource speakers compliant to the PD Program Delivery Quality Standards?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">5.1 Sessions Delivered by Identified RPs</div>
-      ${abcd('rp_r1',d.r1)}
-      <div class="rubric-desc">
-        <b>A</b> = All sessions delivered by identified RPs who attended the Training for Trainers.<br>
-        <b>B</b> = Most sessions by identified RPs; alternatives are equally excellent and NEAP was informed ahead of time.<br>
-        <b>C</b> = Minor changes; almost half by different RPs; NEAP not informed ahead of time.<br>
-        <b>D</b> = Major changes; more than half by different RPs; NEAP not informed.
-      </div>
-    </div>
-    <div class="fg"><label>Reason/s for Deviation (RP changes)</label>
-      <textarea id="rp_dev" rows="2" placeholder="Explain changes in resource persons if any…">${e(d.deviation_reason)}</textarea></div>
-    <div class="rubric-box">
-      <div class="rubric-title">5.2 Compliance to Learning Delivery Standards (DM 44, s. 2023)</div>
-      ${abcd('rp_r2',d.r2)}
-      <div class="rubric-desc">
-        <b>A</b> = 91–100% of the indicators in the PD Program Quality Standards for Learning Management were accomplished.<br>
-        <b>B</b> = About 81–90% accomplished. &nbsp;|&nbsp; <b>C</b> = About 51–80%. &nbsp;|&nbsp; <b>D</b> = 50% or less.
-      </div>
-    </div>
-    <div style="margin-top:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h4 style="margin:0">Learning Delivery Standards Checklist (DM 44, s. 2023)</h4>
-        <span class="chk-count ${cnt/tot>=.91?'b-met':cnt/tot>=.51?'b-partial':'b-low'}" id="rpCnt">${cnt}/${tot} (${Math.round(cnt/tot*100)}%)</span>
-      </div>
-      ${RP_STDS.map((s,i)=>`<div class="chk-item">
-        <input type="checkbox" id="rp_${i}" ${d.chk[i]?'checked':''} onchange="updChk('rp',${tot},'rpCnt')">
-        <label for="rp_${i}">${s}</label></div>`).join('')}
-    </div>
-    <div class="fg" style="margin-top:12px"><label>Observational Notes (Resource Persons)</label>
-      <textarea id="rp_obs" rows="3" placeholder="General observations on training delivery…">${e(d.obs_notes)}</textarea></div>
-  </div>`;
-}
-function collectRPs(){
-  FD.rps.r1=rv('rp_r1');FD.rps.r2=rv('rp_r2');
-  FD.rps.deviation_reason=g('rp_dev');FD.rps.obs_notes=g('rp_obs');
-  RP_STDS.forEach((_,i)=>{const cb=document.getElementById(`rp_${i}`);if(cb)FD.rps.chk[i]=cb.checked;});
-}
-
-function secLRMs(){
-  const d=FD.lrms;
-  const RUBRICS=[
-    {id:'lrm_r1',sel:d.r1,t:'6.1 Fidelity to Quality-Assured LRMs',
-     desc:`<b>A</b> = LRMs were the same as the quality assured materials; fully complied with PD LRMs Quality Standards.<br>
-           <b>B</b> = LRMs were edited to better suit the session but still compliant; NEAP was informed of changes ahead of time.<br>
-           <b>C</b> = About 30–50% of LRMs used were different from the QA LRMs; NEAP not informed ahead of time.<br>
-           <b>D</b> = There were major changes in LRMs; NEAP not informed ahead of time.`},
-    {id:'lrm_r2',sel:d.r2,t:'6.2 Alignment of Distributed Materials to Learning Design',
-     desc:`<b>A</b> = About 91–100% of learning materials aligned with the methodology were distributed.<br>
-           <b>B</b> = About 81–90%. &nbsp;|&nbsp; <b>C</b> = About 51–80%. &nbsp;|&nbsp; <b>D</b> = 50% or less.`},
-    {id:'lrm_r3',sel:d.r3,t:'6.3 Participants Who Received Learning Resource Materials',
-     desc:`<b>A</b> = About 91–100% of the participants received a copy of the LRMs.<br>
-           <b>B</b> = About 81–90%. &nbsp;|&nbsp; <b>C</b> = About 51–80%. &nbsp;|&nbsp; <b>D</b> = 50% or less.`},
-  ];
-  return`<div class="card">
-    <h3>📚 Section 6 — Learning Resource Materials (LRMs)</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent were the LRMs compliant to the PD LRMs Quality Standards?</p>
-    ${RUBRICS.map(r=>`<div class="rubric-box">
-      <div class="rubric-title">${r.t}</div>${abcd(r.id,r.sel)}
-      <div class="rubric-desc">${r.desc}</div></div>`).join('')}
-    <div class="fg" style="margin-top:10px"><label>Observational Notes (LRMs)</label>
-      <textarea id="lrm_obs" rows="3" placeholder="Additional notes on learning materials…">${e(d.notes)}</textarea></div>
-  </div>`;
-}
-function collectLRMs(){
-  FD.lrms.r1=rv('lrm_r1');FD.lrms.r2=rv('lrm_r2');FD.lrms.r3=rv('lrm_r3');
-  FD.lrms.notes=g('lrm_obs');
-}
-
-function secPM(){
-  const d=FD.pm;
-  const cnt=Object.values(d.chk).filter(Boolean).length;
-  const tot=PM_ITEMS.length;
-  return`<div class="card">
-    <h3>⚙️ Section 7 — Program Management</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent was the Program Management compliant to the PD Program Delivery Quality Standards?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">Overall Program Management Rating</div>
-      ${abcd('pm_col',d.col)}
-      <div class="rubric-desc">
-        <b>A</b> = About 91–100% of Program Management indicators were implemented.<br>
-        <b>B</b> = About 81–90%. &nbsp;|&nbsp; <b>C</b> = About 51–80%. &nbsp;|&nbsp; <b>D</b> = 50% or less.
-      </div>
-    </div>
-    <div style="margin-top:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h4 style="margin:0">PD Program Quality Standards Checklist (${tot} items)</h4>
-        <span class="chk-count ${cnt/tot>=.91?'b-met':cnt/tot>=.51?'b-partial':'b-low'}" id="pmCnt">${cnt}/${tot} (${Math.round(cnt/tot*100)}%)</span>
-      </div>
-      ${PM_ITEMS.map((s,i)=>`<div class="chk-item">
-        <input type="checkbox" id="pm_${i}" ${d.chk[i]?'checked':''} onchange="updChk('pm',${tot},'pmCnt')">
-        <label for="pm_${i}">${s}</label></div>`).join('')}
-    </div>
-    <div class="fg" style="margin-top:12px"><label>Observational Notes (Program Management)</label>
-      <textarea id="pm_obs" rows="3" placeholder="Additional observations on program management…">${e(d.notes)}</textarea></div>
-  </div>`;
-}
-function collectPM(){
-  FD.pm.col=rv('pm_col');FD.pm.notes=g('pm_obs');
-  PM_ITEMS.forEach((_,i)=>{const cb=document.getElementById(`pm_${i}`);if(cb)FD.pm.chk[i]=cb.checked;});
-}
-
-function secEval(){
-  const d=FD.eval;
-  return`<div class="card">
-    <h3>📊 Section 8 — Learning Evaluation Scheme</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent was the evaluation of learning compliant to the quality assured PD Program Design?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">Compliance Rating — Learning Evaluation Scheme</div>
-      ${abcd('ev_col',d.col)}
-      <div class="rubric-desc">
-        <b>A</b> = The Level 1 evaluation tool was fully and correctly administered as designed at the end of the day; complete and accurate data was collected from all participants (91–100%).<br>
-        <b>B</b> = The evaluation was mostly implemented as designed with minor deviations; data collected from about 81–90% of participants.<br>
-        <b>C</b> = The evaluation was partially implemented; about 51–80% of participants responded or there were deviations from the design.<br>
-        <b>D</b> = The evaluation tool was minimally administered or not administered (50% or less completed or the tool was not used as designed).
-      </div>
-    </div>
-    <div class="fg" style="margin-top:10px"><label>Observational Notes (Learning Evaluation Scheme)</label>
-      <textarea id="ev_obs" rows="3" placeholder="Notes on how the evaluation tool was administered, any issues, deviations…">${e(d.notes)}</textarea></div>
-  </div>`;
-}
-function collectEval(){FD.eval.col=rv('ev_col');FD.eval.notes=g('ev_obs');}
-
-function secEnvi(){
-  const d=FD.envi;
-  const cnt=Object.values(d.chk).filter(Boolean).length;
-  const tot=ENV_ITEMS.length;
-  return`<div class="card">
-    <h3>🏫 Section 9 — Learning Environment: Face-to-Face</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">To what extent was the venue for the face-to-face PD Program compliant to standards?</p>
-    <div class="rubric-box">
-      <div class="rubric-title">Overall Learning Environment Rating</div>
-      ${abcd('en_col',d.col)}
-      <div class="rubric-desc">
-        <b>A</b> = About 91–100% of the following indicators of the learning environment and venue were met.<br>
-        <b>B</b> = About 81–90%. &nbsp;|&nbsp; <b>C</b> = About 51–80%. &nbsp;|&nbsp; <b>D</b> = 50% or less.
-      </div>
-    </div>
-    <div style="margin-top:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h4 style="margin:0">Learning Environment Indicators (${tot} items)</h4>
-        <span class="chk-count ${cnt/tot>=.91?'b-met':cnt/tot>=.51?'b-partial':'b-low'}" id="enCnt">${cnt}/${tot} (${Math.round(cnt/tot*100)}%)</span>
-      </div>
-      ${ENV_ITEMS.map((s,i)=>`<div class="chk-item">
-        <input type="checkbox" id="en_${i}" ${d.chk[i]?'checked':''} onchange="updChk('en',${tot},'enCnt')">
-        <label for="en_${i}">${s}</label></div>`).join('')}
-    </div>
-    <div class="fg" style="margin-top:12px"><label>Observational Notes (Learning Environment)</label>
-      <textarea id="en_obs" rows="3" placeholder="Additional observations on the venue and environment…">${e(d.notes)}</textarea></div>
-  </div>`;
-}
-function collectEnvi(){
-  FD.envi.col=rv('en_col');FD.envi.notes=g('en_obs');
-  ENV_ITEMS.forEach((_,i)=>{const cb=document.getElementById(`en_${i}`);if(cb)FD.envi.chk[i]=cb.checked;});
-}
-
-function secSummary(){
-  collectAll();
-  const R=computeRatings(FD);
-  return`<div class="card">
-    <h3>📋 Section 10 — Summary &amp; Overall Rating</h3>
-    <div style="background:#f0f4f8;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px">
-      <b>Instructions:</b><br>
-      1. Points per column: A = 4 points, B = 3 points, C = 2 points, D = 1 point.<br>
-      2. For items with two sub-indicators, compute the average to obtain a single rating.<br>
-      3. Calculate the average of all 7 categories to get the Overall Rating.
-    </div>
-    <div class="overall-box">
-      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Overall Rating</div>
-      <div class="overall-num ${ratingClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:8px">${ratingLabel(R.overall)}</div>
-    </div>
-    <table style="margin-bottom:16px">
-      <tr><th>Category</th><th>Question</th><th>Rating</th><th>Description</th><th>Suggested Action</th></tr>
-      ${CATS.map(c=>{
-        const r=R[c.k];
-        return`<tr>
-          <td><b>${c.lbl}</b></td>
-          <td style="font-size:11px;color:var(--muted)">${c.q}</td>
-          <td><span class="badge ${badgeClass(r)}">${r!=null?r.toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${ratingLabel(r)}</td>
-          <td style="font-size:11px">${r!=null&&r<2.6?'Feedback + Debriefing':r!=null?'Feedback to Program Owner':'—'}</td>
-        </tr>`;
-      }).join('')}
-    </table>
-    <h4>Rating Scale Reference</h4>
-    <table style="margin-bottom:16px">
-      <tr><th>Rating</th><th>Description</th><th>Suggested Immediate Action</th></tr>
-      <tr><td>3.6 – 4.0</td><td>Fully met all agreed standards and Exceeded Expectations</td><td>Feedback to program owner</td></tr>
-      <tr><td>2.6 – 3.5</td><td>Fully met all agreed standards and expectations</td><td>Feedback to program owner</td></tr>
-      <tr><td>1.6 – 2.4</td><td>Partially met all agreed standards and expectations</td><td>Feedback to program owner and conduct debriefing</td></tr>
-      <tr><td>1.0 – 1.5</td><td>Minimal conformance to all agreed standards and expectations</td><td>Feedback to program owner and conduct debriefing</td></tr>
-    </table>
-    <h4>Major Observations, Findings &amp; Recommendations</h4>
-    ${CATS.map(c=>`<div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
-      <div style="font-weight:700;font-size:13px;color:var(--primary);margin-bottom:8px">${c.lbl}</div>
-      <div class="fr2">
-        <div class="fg"><label>Major Observations &amp; Findings</label>
-          <textarea id="sum_f_${c.k}" rows="2" placeholder="Key findings for ${c.lbl}…">${e(FD.summary.findings[c.k]||'')}</textarea></div>
-        <div class="fg"><label>Recommendations</label>
-          <textarea id="sum_r_${c.k}" rows="2" placeholder="Recommendations for ${c.lbl}…">${e(FD.summary.recommendations[c.k]||'')}</textarea></div>
-      </div>
-    </div>`).join('')}
-  </div>`;
-}
-function collectSummary(){
-  CATS.forEach(c=>{
-    FD.summary.findings[c.k]=g(`sum_f_${c.k}`)||'';
-    FD.summary.recommendations[c.k]=g(`sum_r_${c.k}`)||'';
-  });
-}
-
-// ================================================================
-// COLLECT ALL
-// ================================================================
-function collectSec(k){
-  const m={profile:collectProfile,incidents:collectIncidents,part:collectPart,
-    design:collectDesign,rps:collectRPs,lrms:collectLRMs,pm:collectPM,
-    eval:collectEval,envi:collectEnvi,summary:collectSummary};
-  (m[k]||function(){})();
-}
-function collectAll(){
-  collectProfile();collectIncidents();collectPart();collectDesign();
-  collectRPs();collectLRMs();collectPM();collectEval();collectEnvi();collectSummary();
-}
-
-// ================================================================
-// SAVE / SUBMIT / LOAD
-// ================================================================
-async function saveDraft(){
-  collectAll();
-  const msg=document.getElementById('formMsg');
+async function storageLoad(key,shared=false){
   try{
-    const payload=mkPayload('draft');
-    await saveObs(payload);
-    showMsg(msg,'✅ Draft saved!','success');
-  }catch(er){showMsg(msg,'❌ Save error: '+er.message,'error');}
+    const r=await window.storage.get(key,shared);
+    if(!r)return null;
+    try{return JSON.parse(r.value);}catch{return r.value;}
+  }catch{return null;}
 }
-async function submitForm(){
-  collectAll();
-  const msg=document.getElementById('formMsg');
-  if(!FD.meta.class_manager||!FD.meta.trainers){
-    showMsg(msg,'⚠️ Please complete Class Manager and Trainers fields in Profile before submitting.','error');return;
+
+// ─── AUTH ──────────────────────────────────────────────────────────────────
+async function doLogin(){
+  const u=state.loginUser.trim();
+  const acct=ALL_ACCTS[u];
+  if(!acct||acct.password!==state.loginPass){
+    setState({loginErr:'Invalid username or password.'});
+    return;
   }
-  if(!confirm('Submit this observation? It will be locked after submission.'))return;
-  try{
-    const payload=mkPayload('submitted');
-    payload.submitted_at=new Date().toISOString();
-    await saveObs(payload);
-    showMsg(msg,'✅ Observation submitted successfully!','success');
-    initFD();
-  }catch(er){showMsg(msg,'❌ Submit error: '+er.message,'error');}
-}
-async function loadDraft(){
-  const msg=document.getElementById('formMsg');
-  const day=FD?.meta?.training_day||'Day 1';
-  try{
-    let found=null;
-    if(IS_SB()){
-      const rows=await sbGet('me_obs',`?username=eq.${encodeURIComponent(CU.username)}&training_day=eq.${encodeURIComponent(day)}&order=updated_at.desc&limit=1`);
-      if(rows&&rows.length){found=rows[0];FD=found.data;}
-    }
-    if(!found){
-      // Try localStorage
-      const local=lsLoad().filter(r=>r.username===CU.username&&r.training_day===day);
-      if(local.length){FD=local[local.length-1].data;showMsg(msg,`✅ Loaded local draft for ${day}`,'success');}
-      else showMsg(msg,`ℹ️ No saved draft found for ${day}.`,'info');
-    }else{
-      showMsg(msg,`✅ Loaded ${found.status} — ${found.obs_date}`,'success');
-    }
-    renderSec(CS);
-  }catch(er){showMsg(msg,'❌ Load error: '+er.message,'error');}
-}
-function mkPayload(status){
-  return{username:CU.username,class_name:CU.class_assigned,
-    training_day:FD.meta.training_day,obs_date:FD.meta.obs_date,
-    status,data:FD,updated_at:new Date().toISOString()};
-}
-async function saveObs(payload){
-  // Always save to localStorage as backup
-  const local=lsLoad().filter(r=>!(r.username===payload.username&&r.training_day===payload.training_day));
-  local.push(payload);lsSave(local);
-  // Save to Supabase if configured
-  if(IS_SB()){
-    try{
-      const existing=await sbGet('me_obs',`?username=eq.${encodeURIComponent(payload.username)}&training_day=eq.${encodeURIComponent(payload.training_day)}&limit=1`);
-      if(existing&&existing.length){
-        await sbPatch('me_obs',`?id=eq.${existing[0].id}`,payload);
-      }else{
-        payload.created_at=new Date().toISOString();
-        await sbUpsert('me_obs',payload);
-      }
-    }catch(er){console.warn('Supabase save failed, localStorage backup used:',er.message);}
+  const user={...acct,username:u};
+  if(acct.role==='superadmin'){
+    setState({screen:'superadmin',user,loginErr:'',superLoading:true});
+    loadAllSubs();
+    if(pollTimer)clearInterval(pollTimer);
+    pollTimer=setInterval(loadAllSubs,10000);
+  } else {
+    setState({screen:'form',user,loginErr:'',formData:initData(),formStatus:'empty',activeSection:1});
+    await loadFormState(user);
   }
 }
 
-// ================================================================
-// PRINT — INDIVIDUAL
-// ================================================================
-function printMyReport(){
-  collectAll();
-  const R=computeRatings(FD);
-  const rpCnt=Object.values(FD.rps.chk).filter(Boolean).length;
-  const pmCnt=Object.values(FD.pm.chk).filter(Boolean).length;
-  const enCnt=Object.values(FD.envi.chk).filter(Boolean).length;
-
-  // Build print content
-  const printWin=window.open('','_blank','width=900,height=700');
-  printWin.document.write(`<!DOCTYPE html><html><head>
-    <title>M&E Observation Report — ${FD.meta.class_name} — ${FD.meta.training_day}</title>
-    <style>
-      body{font-family:'Segoe UI',sans-serif;font-size:11px;color:#111;margin:20px;line-height:1.5}
-      h1{font-size:15px;color:#1a3a5c;margin-bottom:2px}
-      h2{font-size:13px;color:#1a3a5c;margin:14px 0 6px;border-bottom:2px solid #1a3a5c;padding-bottom:3px}
-      h3{font-size:12px;color:#1a3a5c;margin:10px 0 4px}
-      .header{text-align:center;border-bottom:3px solid #1a3a5c;padding-bottom:10px;margin-bottom:16px}
-      .header p{font-size:11px;color:#555;margin-top:2px}
-      table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11px}
-      th{background:#1a3a5c;color:#fff;padding:6px 8px;text-align:left;font-size:11px}
-      td{padding:5px 8px;border:1px solid #ddd;vertical-align:top}
-      tr:nth-child(even) td{background:#f8fafc}
-      .overall{text-align:center;margin:12px 0;padding:10px;border:2px solid #1a3a5c;border-radius:8px}
-      .overall .num{font-size:36px;font-weight:900;color:#1a3a5c}
-      .badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
-      .b-met{background:#e8f5e9;color:#1b5e20}.b-partial{background:#fff8e1;color:#e65100}.b-low{background:#ffebee;color:#b71c1c}.b-none{background:#f5f5f5;color:#777}
-      .chk-row{display:flex;gap:6px;align-items:flex-start;padding:3px 0;border-bottom:1px solid #eee;font-size:11px}
-      .chk-box{width:12px;height:12px;border:1px solid #555;flex-shrink:0;display:inline-block;margin-top:1px}
-      .chk-box.checked{background:#1a3a5c;}
-      .inc-card{border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:8px}
-      .fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-      .sig-line{border-top:1px solid #000;width:200px;margin-top:30px}
-      @media print{button{display:none!important}}
-    </style>
-  </head><body>
-    <div class="header">
-      <h1>M&E &amp; Process Observation Report</h1>
-      <p>Training of Regional Trainers on the Revised Grade 6 Curriculum</p>
-      <p>Department of Education (DepEd) — National Capital Region (NCR)</p>
-    </div>
-    <button onclick="window.print()" style="padding:8px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-bottom:12px">🖨️ Print / Save as PDF</button>
-
-    <h2>1. Training Profile</h2>
-    <table>
-      <tr><td><b>PD Program Title</b></td><td colspan="3">${FD.meta.pd_title}</td></tr>
-      <tr><td><b>Class</b></td><td>${FD.meta.class_name}</td><td><b>Training Day</b></td><td>${FD.meta.training_day}</td></tr>
-      <tr><td><b>Date</b></td><td>${FD.meta.obs_date}</td><td><b>No. of Participants</b></td><td>${FD.meta.num_participants||'—'}</td></tr>
-      <tr><td><b>M&amp;E Officer</b></td><td>${FD.meta.me_officer}</td><td><b>Class Manager</b></td><td>${FD.meta.class_manager||'—'}</td></tr>
-      <tr><td><b>Trainers / RPs</b></td><td colspan="3">${FD.meta.trainers||'—'}</td></tr>
-    </table>
-
-    <h2>2. Critical Incidents</h2>
-    ${FD.incidents.length===0?'<p><i>No critical incidents recorded.</i></p>':
-      FD.incidents.map((inc,i)=>`<div class="inc-card">
-        <b>Incident #${i+1}</b><br>
-        <b>Situation/Task:</b> ${inc.situation||'—'}<br>
-        <b>Action Taken:</b> ${inc.action||'—'}<br>
-        <b>Result:</b> ${inc.result||'—'}
-      </div>`).join('')}
-
-    <h2>3. Participants</h2>
-    <table>
-      <tr><th>Indicator</th><th>Rating Selected</th><th>Points</th></tr>
-      <tr><td>3.1 Target vs. Actual Participants Match</td><td>${FD.part.r1||'—'}</td><td>${colPts(FD.part.r1)??'—'}</td></tr>
-      <tr><td>3.2 Qualification to Selection Criteria</td><td>${FD.part.r2||'—'}</td><td>${colPts(FD.part.r2)??'—'}</td></tr>
-      <tr><td colspan="2"><b>Category Rating</b></td><td><b>${R.part!=null?R.part.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <table>
-      <tr><td><b>Target</b></td><td>${FD.part.target||'—'}</td><td><b>Actual</b></td><td>${FD.part.actual||'—'}</td><td><b>Qualified</b></td><td>${FD.part.qualified||'—'}</td></tr>
-    </table>
-    <p><b>Reason for Deviation:</b> ${FD.part.deviation_reason||'None'}</p>
-    <p><b>Notes:</b> ${FD.part.notes||'—'}</p>
-
-    <h2>4. Program Design</h2>
-    <table>
-      <tr><th>Rating Selected</th><th>Points</th><th>Category Rating</th></tr>
-      <tr><td>${FD.design.col||'—'}</td><td>${colPts(FD.design.col)??'—'}</td><td><b>${R.design!=null?R.design.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <table>
-      <tr><th>PD Program Component</th><th>Observational Notes</th></tr>
-      ${DESIGN_COMPS.map((c,i)=>`<tr><td><b>${c}</b></td><td>${FD.design.notes[DESIGN_KEYS[i]]||'—'}</td></tr>`).join('')}
-    </table>
-
-    <h2>5. Resource Persons / Subject-Matter Experts</h2>
-    <table>
-      <tr><th>Indicator</th><th>Rating</th><th>Points</th></tr>
-      <tr><td>5.1 Sessions Delivered by Identified RPs</td><td>${FD.rps.r1||'—'}</td><td>${colPts(FD.rps.r1)??'—'}</td></tr>
-      <tr><td>5.2 Compliance to Learning Delivery Standards</td><td>${FD.rps.r2||'—'}</td><td>${colPts(FD.rps.r2)??'—'}</td></tr>
-      <tr><td colspan="2"><b>Category Rating</b></td><td><b>${R.rps!=null?R.rps.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <p><b>RP Deviation Reason:</b> ${FD.rps.deviation_reason||'None'}</p>
-    <h3>Learning Delivery Standards Checklist: ${rpCnt}/${RP_STDS.length} met (${Math.round(rpCnt/RP_STDS.length*100)}%)</h3>
-    ${RP_STDS.map((s,i)=>`<div class="chk-row"><div class="chk-box ${FD.rps.chk[i]?'checked':''}"></div><span>${s}</span></div>`).join('')}
-    <p style="margin-top:8px"><b>Observational Notes:</b> ${FD.rps.obs_notes||'—'}</p>
-
-    <h2>6. Learning Resource Materials</h2>
-    <table>
-      <tr><th>Indicator</th><th>Rating</th><th>Points</th></tr>
-      <tr><td>6.1 Fidelity to QA LRMs</td><td>${FD.lrms.r1||'—'}</td><td>${colPts(FD.lrms.r1)??'—'}</td></tr>
-      <tr><td>6.2 Alignment to Learning Design</td><td>${FD.lrms.r2||'—'}</td><td>${colPts(FD.lrms.r2)??'—'}</td></tr>
-      <tr><td>6.3 Participants who Received Materials</td><td>${FD.lrms.r3||'—'}</td><td>${colPts(FD.lrms.r3)??'—'}</td></tr>
-      <tr><td colspan="2"><b>Category Rating</b></td><td><b>${R.lrms!=null?R.lrms.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <p><b>Notes:</b> ${FD.lrms.notes||'—'}</p>
-
-    <h2>7. Program Management</h2>
-    <table>
-      <tr><th>Rating Selected</th><th>Points</th><th>Category Rating</th></tr>
-      <tr><td>${FD.pm.col||'—'}</td><td>${colPts(FD.pm.col)??'—'}</td><td><b>${R.pm!=null?R.pm.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <h3>PM Checklist: ${pmCnt}/${PM_ITEMS.length} met (${Math.round(pmCnt/PM_ITEMS.length*100)}%)</h3>
-    ${PM_ITEMS.map((s,i)=>`<div class="chk-row"><div class="chk-box ${FD.pm.chk[i]?'checked':''}"></div><span>${s}</span></div>`).join('')}
-    <p style="margin-top:8px"><b>Notes:</b> ${FD.pm.notes||'—'}</p>
-
-    <h2>8. Learning Evaluation Scheme</h2>
-    <table>
-      <tr><th>Rating Selected</th><th>Points</th><th>Category Rating</th></tr>
-      <tr><td>${FD.eval.col||'—'}</td><td>${colPts(FD.eval.col)??'—'}</td><td><b>${R.eval!=null?R.eval.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <p><b>Notes:</b> ${FD.eval.notes||'—'}</p>
-
-    <h2>9. Learning Environment: Face-to-Face</h2>
-    <table>
-      <tr><th>Rating Selected</th><th>Points</th><th>Category Rating</th></tr>
-      <tr><td>${FD.envi.col||'—'}</td><td>${colPts(FD.envi.col)??'—'}</td><td><b>${R.envi!=null?R.envi.toFixed(2):'—'}</b></td></tr>
-    </table>
-    <h3>Environment Checklist: ${enCnt}/${ENV_ITEMS.length} met (${Math.round(enCnt/ENV_ITEMS.length*100)}%)</h3>
-    ${ENV_ITEMS.map((s,i)=>`<div class="chk-row"><div class="chk-box ${FD.envi.chk[i]?'checked':''}"></div><span>${s}</span></div>`).join('')}
-    <p style="margin-top:8px"><b>Notes:</b> ${FD.envi.notes||'—'}</p>
-
-    <h2>10. Summary &amp; Overall Rating</h2>
-    <div class="overall">
-      <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Overall Rating</div>
-      <div class="num">${R.overall!=null?R.overall.toFixed(2):'—'}</div>
-      <div style="font-size:12px;color:#555">${ratingLabel(R.overall)}</div>
-    </div>
-    <table>
-      <tr><th>Category</th><th>Rating</th><th>Description</th><th>Suggested Action</th></tr>
-      ${CATS.map(c=>{const r=R[c.k];return`<tr>
-        <td><b>${c.lbl}</b></td>
-        <td>${r!=null?r.toFixed(2):'—'}</td>
-        <td>${ratingLabel(r)}</td>
-        <td>${r!=null&&r<2.6?'Feedback + Debriefing':r!=null?'Feedback to Program Owner':'—'}</td>
-      </tr>`;}).join('')}
-    </table>
-    <table>
-      <tr><th>Category</th><th>Major Observations &amp; Findings</th><th>Recommendations</th></tr>
-      ${CATS.map(c=>`<tr>
-        <td><b>${c.lbl}</b></td>
-        <td>${FD.summary.findings[c.k]||'—'}</td>
-        <td>${FD.summary.recommendations[c.k]||'—'}</td>
-      </tr>`).join('')}
-    </table>
-
-    <div style="margin-top:30px;display:flex;gap:60px">
-      <div><div class="sig-line"></div><div style="font-size:11px;margin-top:4px">M&amp;E Officer's Signature over Printed Name</div><div style="font-size:11px">${FD.meta.me_officer}</div><div style="font-size:11px">Date: ${FD.meta.obs_date}</div></div>
-      <div><div class="sig-line"></div><div style="font-size:11px;margin-top:4px">Verified by (Training Coordinator / Class Manager)</div><div style="font-size:11px">Date: ________________</div></div>
-    </div>
-  </body></html>`);
-  printWin.document.close();
-}
-
-// ================================================================
-// MY SUBMISSIONS
-// ================================================================
-async function renderMySubs(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">📋 My Submissions</div><div class="page-sub">${CU.class_assigned}</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
-  let subs=[];
-  if(IS_SB()){
-    try{subs=await sbGet('me_obs',`?username=eq.${encodeURIComponent(CU.username)}&order=training_day.asc`)||[];}
-    catch(er){console.warn(er);}
+async function loadFormState(user){
+  const status=await storageLoad(`status_${user.username}`);
+  if(status==='submitted'){
+    const sub=await storageLoad(`submission_${user.username}`,true);
+    if(sub&&sub.formData)setState({formStatus:'submitted',formData:sub.formData});
+    else setState({formStatus:'submitted'});
+  } else if(status==='draft'){
+    setState({formStatus:'draft'});
   }
-  // Also check localStorage
-  const local=lsLoad().filter(r=>r.username===CU.username);
-  if(!subs.length) subs=local;
-
-  mc.innerHTML=`<div class="page-title">📋 My Submissions</div>
-    <div class="page-sub">${CU.class_assigned} — ${subs.length} record(s)</div>
-    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:12px">💡 <b>Tip:</b> Click <b>⬇️ Export</b> on each submission to download a JSON file. Send this file to the Super Administrator so they can include your data in the consolidated report.</div>`:''}
-    ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No submissions yet. Go to 📝 Observation Form to encode your observation.</p></div>`:`
-    <div class="card"><table>
-      <tr><th>Training Day</th><th>Date</th><th>Status</th><th>Overall Rating</th><th>Updated</th><th>Action</th></tr>
-      ${subs.map(s=>{
-        const R=computeRatings(s.data);
-        return`<tr>
-          <td><b>${s.training_day||'—'}</b></td>
-          <td>${s.obs_date||'—'}</td>
-          <td><span class="badge ${s.status==='submitted'?'b-met':'b-partial'}">${s.status}</span></td>
-          <td><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${(s.updated_at||'').split('T')[0]}</td>
-          <td style="display:flex;gap:5px">
-            <button class="btn btn-primary btn-sm" onclick="viewIndvSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁 View</button>
-            <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️ PDF</button>
-            <button class="btn btn-sm" style="background:#37474f;color:#fff" onclick="exportSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">⬇️ Export</button>
-          </td>
-        </tr>`;
-      }).join('')}
-    </table></div>`}`;
 }
 
-window.viewIndvSub=function(sub){
-  const mc=document.getElementById('mainContent');
-  const R=computeRatings(sub.data);
-  const fd=sub.data;
-  mc.innerHTML=`
-    <button class="btn btn-primary btn-sm" onclick="renderMySubs()" style="margin-bottom:12px">← My Submissions</button>
-    <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(sub).replace(/"/g,'&quot;')})" style="margin-bottom:12px">🖨️ Print / Save PDF</button>
-    ${buildReportHTML(sub,R,false)}`;
-};
-
-window.printSubReport=function(sub){
-  FD=sub.data;
-  printMyReport();
-};
-
-window.exportSub=function(sub){
-  const json=JSON.stringify([sub],null,2);
-  const blob=new Blob([json],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`ME_${(sub.class_name||'').replace(/\s/g,'_')}_${(sub.training_day||'').replace(/\s/g,'_')}_${sub.obs_date||'exported'}.json`;
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
-};
-
-// ================================================================
-// ADMIN: DASHBOARD
-// ================================================================
-async function renderDashboard(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
-  const allSubs=await loadAllSubs();
-  const submitted=allSubs.filter(s=>s.status==='submitted');
-  const drafted=allSubs.filter(s=>s.status==='draft');
-  const officers=ACCOUNTS.filter(a=>a.role==='me_officer');
-  mc.innerHTML=`<div class="page-title">📊 Admin Dashboard</div>
-    <div class="page-sub">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
-    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:14px">
-      ⚠️ <b>Supabase not yet connected.</b> Submissions are saved locally (this browser only). 
-      Use the <b>⬆️ Import</b> button below to load JSON files exported by M&E Officers, or configure Supabase for automatic multi-device sync.
-      <div style="margin-top:8px">
-        <label class="btn btn-success btn-sm" style="cursor:pointer">
-          ⬆️ Import M&E JSON Files
-          <input type="file" accept=".json" multiple style="display:none" onchange="importSubmissions(this.files)">
-        </label>
-        <button class="btn btn-sm" style="background:#37474f;color:#fff;margin-left:6px" onclick="clearImported()">🗑 Clear Imported Data</button>
-        <span style="font-size:11px;color:var(--muted);margin-left:8px">Imported: ${lsLoadImported().length} record(s)</span>
-      </div>
-    </div>`:''}
-    ${IS_SB()?'':`<div class="msg msg-info show" style="display:none"></div>`}
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-lbl">M&amp;E Officers</div><div class="kpi-val">${officers.length}</div><div class="kpi-sub">12 classes</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Submitted</div><div class="kpi-val">${submitted.length}</div><div class="kpi-sub">${drafted.length} drafts</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Classes Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.class_name)).size}</div><div class="kpi-sub">of 12</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Days Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.training_day)).size}</div><div class="kpi-sub">of 5 days</div></div>
-    </div>
-    <div class="card"><h3>Class-by-Class Status</h3>
-      <table>
-        <tr><th>Class</th><th>M&amp;E Officer</th><th>Submitted Reports</th><th>Days Covered</th><th>Avg. Overall Rating</th><th>Action</th></tr>
-        ${officers.map(u=>{
-          const cs=submitted.filter(s=>s.class_name===u.class_assigned);
-          const days=[...new Set(cs.map(s=>s.training_day))].join(', ')||'—';
-          const ratings=cs.map(s=>computeRatings(s.data).overall).filter(x=>x!=null);
-          const avgR=ratings.length?ratings.reduce((a,b)=>a+b,0)/ratings.length:null;
-          return`<tr>
-            <td><b>${u.class_assigned}</b></td>
-            <td>${u.name}</td>
-            <td><span class="badge ${cs.length?'b-met':'b-none'}">${cs.length} report${cs.length!==1?'s':''}</span></td>
-            <td style="font-size:12px">${days}</td>
-            <td><span class="badge ${badgeClass(avgR)}">${avgR!=null?avgR.toFixed(2):'—'}</span></td>
-            <td><button class="btn btn-primary btn-sm" onclick="viewClassDetail('${u.class_assigned}')">👁 View</button></td>
-          </tr>`;
-        }).join('')}
-      </table>
-    </div>`;
+function doLogout(){
+  if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+  setState({screen:'login',user:null,loginUser:'',loginPass:'',loginErr:'',formData:initData(),formStatus:'empty',activeSection:1,superSubs:[],superSelected:null,toast:null});
 }
 
-// ================================================================
-// ADMIN: CONSOLIDATED REPORT
-// ================================================================
-async function renderConsolidated(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">📈 Consolidated Report</div><div style="color:var(--muted);padding:10px">Loading all submissions…</div>`;
-  const allSubs=await loadAllSubs();
-  const submitted=allSubs.filter(s=>s.status==='submitted');
-  const officers=ACCOUNTS.filter(a=>a.role==='me_officer');
+// ─── FORM ACTIONS ──────────────────────────────────────────────────────────
+async function doSaveDraft(){
+  if(state.busy)return;
+  setState({busy:true});
+  const ok=await storageSave(`draft_${state.user.username}`,{formData:state.formData,savedAt:new Date().toISOString()},false);
+  if(ok)await storageSave(`status_${state.user.username}`,'draft',false);
+  setState({busy:false,formStatus:ok?'draft':state.formStatus});
+  showToast(ok?'Draft saved successfully!':'Failed to save draft.', ok?'success':'error');
+}
 
-  // Compute per-class averages across all submitted days
-  const classData={};
-  officers.forEach(u=>{
-    const subs=submitted.filter(s=>s.class_name===u.class_assigned);
-    const allR=subs.map(s=>computeRatings(s.data));
-    const cat={};
-    CATS.forEach(c=>{
-      const vals=allR.map(r=>r[c.k]).filter(x=>x!=null);
-      cat[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+async function doLoadDraft(){
+  if(state.busy)return;
+  setState({busy:true});
+  const d=await storageLoad(`draft_${state.user.username}`,false);
+  if(d&&d.formData){
+    setState({busy:false,formData:d.formData});
+    showToast(`Draft loaded (saved ${new Date(d.savedAt).toLocaleString()}) ✓`);
+  } else {
+    setState({busy:false});
+    showToast('No saved draft found.','error');
+  }
+}
+
+function openConfirm(msg,cb){setState({confirmOpen:true,confirmMsg:msg,confirmCb:cb});}
+function closeConfirm(){setState({confirmOpen:false,confirmMsg:'',confirmCb:null});}
+function execConfirm(){const cb=state.confirmCb;closeConfirm();if(cb)cb();}
+
+async function doSubmit(){
+  if(state.busy)return;
+  setState({busy:true});
+  const payload={
+    formData:state.formData,
+    submittedAt:new Date().toISOString(),
+    submittedBy:state.user.username,
+    accountLabel:state.user.label,
+    classNum:state.user.classNum,
+  };
+  const ok=await storageSave(`submission_${state.user.username}`,payload,true);
+  if(ok)await storageSave(`status_${state.user.username}`,'submitted',false);
+  setState({busy:false,formStatus:ok?'submitted':state.formStatus});
+  showToast(ok?'Form submitted! Now visible to Super Admin. ✓':'Submission failed. Please try again.', ok?'success':'error');
+}
+
+function doPrint(){
+  const sec=SECTIONS.find(s=>s.id===state.activeSection);
+  const fdata=state.formData;
+  const win=window.open('','_blank');
+  if(!win)return;
+  let html=`<html><head><title>M&E Form - ${state.user.label}</title>
+<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px;margin-bottom:4px}h2{font-size:15px;margin:20px 0 12px;color:#1e3a5f}p{margin:4px 0;font-size:13px}.lbl{color:#555;font-size:12px;margin-top:10px;font-weight:bold}.val{font-size:13px;margin-bottom:6px;padding:4px 0;border-bottom:1px solid #eee}@media print{button{display:none}}</style>
+</head><body>
+<h1>M&E & Process Observation Form</h1>
+<p style="color:#555;font-size:13px">${state.user.label} · Status: ${state.formStatus.toUpperCase()} · Printed: ${new Date().toLocaleString()}</p>`;
+  SECTIONS.forEach(s=>{
+    html+=`<h2>${s.title}</h2>`;
+    s.fields.forEach(f=>{
+      const v=fdata[f.k]||'';
+      html+=`<div class="lbl">${f.l}</div><div class="val">${v||'—'}</div>`;
     });
-    const ovals=Object.values(cat).filter(x=>x!=null);
-    cat.overall=ovals.length?ovals.reduce((a,b)=>a+b,0)/ovals.length:null;
-    classData[u.class_assigned]={name:u.name,count:subs.length,ratings:cat};
   });
-
-  // Regional averages
-  const regAvg={};
-  CATS.forEach(c=>{
-    const vals=Object.values(classData).map(d=>d.ratings[c.k]).filter(x=>x!=null);
-    regAvg[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-  });
-  const ovals=Object.values(regAvg).filter(x=>x!=null);
-  regAvg.overall=ovals.length?ovals.reduce((a,b)=>a+b,0)/ovals.length:null;
-
-  mc.innerHTML=`<div class="page-title">📈 Consolidated Report</div>
-    <div class="page-sub">All Classes — Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
-    <div class="btn-row" style="margin-bottom:16px">
-      <button class="btn btn-pdf" onclick="printConsolidated()">🖨️ Print Consolidated Report / Save PDF</button>
-      <button class="btn btn-sm" style="background:#37474f;color:#fff" onclick="exportAllSubs()">⬇️ Export All Submissions (JSON)</button>
-    </div>
-    <div class="card"><h3>Regional Overall Rating</h3>
-      <div class="overall-box">
-        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">NCR Consolidated Overall Rating</div>
-        <div class="overall-num ${ratingClass(regAvg.overall)}">${regAvg.overall!=null?regAvg.overall.toFixed(2):'—'}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px">${ratingLabel(regAvg.overall)} &nbsp;|&nbsp; Based on ${submitted.length} submitted report(s)</div>
-      </div>
-      <table>
-        <tr><th>Category</th><th>NCR Average</th><th>Description</th></tr>
-        ${CATS.map(c=>`<tr>
-          <td><b>${c.lbl}</b></td>
-          <td><span class="badge ${badgeClass(regAvg[c.k])}">${regAvg[c.k]!=null?regAvg[c.k].toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${ratingLabel(regAvg[c.k])}</td>
-        </tr>`).join('')}
-      </table>
-    </div>
-    <div class="card"><h3>Consolidated Ratings per Class (All Days)</h3>
-      <div style="overflow-x:auto"><table class="cons-table">
-        <tr>
-          <th>Class</th><th>Officer</th><th>Reports</th>
-          ${CATS.map(c=>`<th style="min-width:70px">${c.lbl}</th>`).join('')}
-          <th>Overall</th>
-        </tr>
-        ${officers.map(u=>{
-          const d=classData[u.class_assigned];
-          if(!d) return '';
-          return`<tr>
-            <td><b>${u.class_assigned}</b></td>
-            <td style="font-size:11px">${u.name.replace('M&E Officer — ','')}</td>
-            <td style="text-align:center">${d.count}</td>
-            ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(d.ratings[c.k])}">${d.ratings[c.k]!=null?d.ratings[c.k].toFixed(2):'—'}</span></td>`).join('')}
-            <td style="text-align:center"><span class="badge ${badgeClass(d.ratings.overall)}">${d.ratings.overall!=null?d.ratings.overall.toFixed(2):'—'}</span></td>
-          </tr>`;
-        }).join('')}
-        <tr style="background:#f0f4f8;font-weight:700">
-          <td colspan="3"><b>NCR AVERAGE</b></td>
-          ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(regAvg[c.k])}">${regAvg[c.k]!=null?regAvg[c.k].toFixed(2):'—'}</span></td>`).join('')}
-          <td style="text-align:center"><span class="badge ${badgeClass(regAvg.overall)}">${regAvg.overall!=null?regAvg.overall.toFixed(2):'—'}</span></td>
-        </tr>
-      </table></div>
-    </div>
-    <div class="card" id="consFindings"><h3>Consolidated Findings &amp; Recommendations per Category</h3>
-      ${CATS.map(c=>{
-        const catFindings=submitted.filter(s=>s.data?.summary?.findings?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.findings[c.k]}));
-        const catRecs=submitted.filter(s=>s.data?.summary?.recommendations?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.recommendations[c.k]}));
-        return`<div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
-          <div style="font-weight:700;color:var(--primary);margin-bottom:6px">${c.lbl}</div>
-          <div class="fr2">
-            <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">FINDINGS FROM ALL CLASSES</div>
-              ${catFindings.length?catFindings.map(f=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>${f.cls} — ${f.day}:</b> ${f.txt}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
-            <div><div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">RECOMMENDATIONS FROM ALL CLASSES</div>
-              ${catRecs.length?catRecs.map(r=>`<div style="font-size:12px;margin-bottom:4px;padding:4px 8px;background:#f8fafc;border-radius:4px"><b>${r.cls} — ${r.day}:</b> ${r.txt}</div>`).join(''):'<p style="color:var(--muted);font-size:12px">—</p>'}</div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-    <div class="card"><h3>Per-Day Breakdown (All Classes)</h3>
-      <div style="overflow-x:auto"><table class="cons-table">
-        <tr><th>Class</th><th>Training Day</th><th>Date</th>
-          ${CATS.map(c=>`<th style="min-width:60px;font-size:10px">${c.lbl}</th>`).join('')}
-          <th>Overall</th>
-        </tr>
-        ${submitted.sort((a,b)=>(a.class_name>b.class_name?1:-1)||(a.training_day>b.training_day?1:-1)).map(s=>{
-          const R=computeRatings(s.data);
-          return`<tr>
-            <td><b>${s.class_name}</b></td>
-            <td>${s.training_day}</td>
-            <td>${s.obs_date||'—'}</td>
-            ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(R[c.k])}">${R[c.k]!=null?R[c.k].toFixed(2):'—'}</span></td>`).join('')}
-            <td style="text-align:center"><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
-          </tr>`;
-        }).join('')}
-      </table></div>
-    </div>`;
+  html+=`<br><button onclick="window.print()">Print / Save as PDF</button></body></html>`;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),500);
 }
 
-window.exportAllSubs=async function(){
-  const allSubs=await loadAllSubs();
-  const submitted=allSubs.filter(s=>s.status==='submitted');
-  if(!submitted.length){alert('No submitted records to export.');return;}
-  const json=JSON.stringify(submitted,null,2);
-  const blob=new Blob([json],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`ME_Consolidated_All_${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
-};
-
-window.printConsolidated=async function(){
-  const allSubs=await loadAllSubs();
-  const submitted=allSubs.filter(s=>s.status==='submitted');
-  const officers=ACCOUNTS.filter(a=>a.role==='me_officer');
-  const classData={};
-  officers.forEach(u=>{
-    const subs=submitted.filter(s=>s.class_name===u.class_assigned);
-    const allR=subs.map(s=>computeRatings(s.data));
-    const cat={};
-    CATS.forEach(c=>{const vals=allR.map(r=>r[c.k]).filter(x=>x!=null);cat[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;});
-    const ovals=Object.values(cat).filter(x=>x!=null);
-    cat.overall=ovals.length?ovals.reduce((a,b)=>a+b,0)/ovals.length:null;
-    classData[u.class_assigned]={name:u.name,count:subs.length,ratings:cat};
-  });
-  const regAvg={};
-  CATS.forEach(c=>{const vals=Object.values(classData).map(d=>d.ratings[c.k]).filter(x=>x!=null);regAvg[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;});
-  const ovals=Object.values(regAvg).filter(x=>x!=null);
-  regAvg.overall=ovals.length?ovals.reduce((a,b)=>a+b,0)/ovals.length:null;
-
-  const pw=window.open('','_blank','width=1100,height=800');
-  pw.document.write(`<!DOCTYPE html><html><head>
-    <title>Consolidated M&E Report — DepEd NCR 2026</title>
-    <style>
-      body{font-family:'Segoe UI',sans-serif;font-size:11px;color:#111;margin:20px;line-height:1.5}
-      h1{font-size:16px;color:#1a3a5c;margin-bottom:2px}
-      h2{font-size:13px;color:#1a3a5c;margin:14px 0 6px;border-bottom:2px solid #1a3a5c;padding-bottom:3px}
-      h3{font-size:12px;color:#1a3a5c;margin:10px 0 4px}
-      .header{text-align:center;border-bottom:3px solid #1a3a5c;padding-bottom:10px;margin-bottom:16px}
-      table{width:100%;border-collapse:collapse;margin-bottom:12px}
-      th{background:#1a3a5c;color:#fff;padding:6px 8px;text-align:left;font-size:11px}
-      td{padding:5px 8px;border:1px solid #ddd;font-size:11px;vertical-align:top}
-      tr:nth-child(even) td{background:#f8fafc}
-      .avg-row td{background:#e8f0f8!important;font-weight:700}
-      .overall{text-align:center;margin:12px 0;padding:12px;border:2px solid #1a3a5c;border-radius:8px}
-      .overall .num{font-size:42px;font-weight:900;color:#1a3a5c}
-      .badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block}
-      .b-met{background:#e8f5e9;color:#1b5e20}.b-partial{background:#fff8e1;color:#e65100}.b-low{background:#ffebee;color:#b71c1c}.b-none{background:#f5f5f5;color:#777}
-      .fin-box{border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:8px}
-      .fin-item{padding:3px 6px;background:#f8fafc;border-radius:4px;margin-bottom:3px}
-      @media print{button{display:none!important}}
-    </style>
-  </head><body>
-    <div class="header">
-      <h1>Consolidated M&E &amp; Process Observation Report</h1>
-      <p><b>Training of Regional Trainers on the Revised Grade 6 Curriculum</b></p>
-      <p>Department of Education (DepEd) — National Capital Region (NCR)</p>
-      <p>Date Generated: ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})}</p>
-    </div>
-    <button onclick="window.print()" style="padding:8px 16px;background:#6a1b9a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;margin-bottom:14px">🖨️ Print / Save as PDF</button>
-
-    <h2>NCR Consolidated Overall Rating</h2>
-    <div class="overall">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#555">Overall Rating</div>
-      <div class="num">${regAvg.overall!=null?regAvg.overall.toFixed(2):'—'}</div>
-      <div style="font-size:12px;color:#555">${ratingLabel(regAvg.overall)}</div>
-      <div style="font-size:11px;color:#777;margin-top:4px">Based on ${submitted.length} submitted observation report(s)</div>
-    </div>
-
-    <h2>Category Ratings — NCR Average</h2>
-    <table>
-      <tr><th>Category</th><th>Question</th><th>NCR Avg. Rating</th><th>Description</th><th>Suggested Action</th></tr>
-      ${CATS.map(c=>`<tr>
-        <td><b>${c.lbl}</b></td>
-        <td style="font-size:10px;color:#555">${c.q}</td>
-        <td style="text-align:center"><span class="badge ${badgeClass(regAvg[c.k])}">${regAvg[c.k]!=null?regAvg[c.k].toFixed(2):'—'}</span></td>
-        <td>${ratingLabel(regAvg[c.k])}</td>
-        <td>${regAvg[c.k]!=null&&regAvg[c.k]<2.6?'Feedback + Debriefing':regAvg[c.k]!=null?'Feedback to Program Owner':'—'}</td>
-      </tr>`).join('')}
-    </table>
-
-    <h2>Per-Class Consolidated Ratings</h2>
-    <table>
-      <tr>
-        <th>Class</th><th>Reports</th>
-        ${CATS.map(c=>`<th>${c.lbl}</th>`).join('')}
-        <th>Overall</th>
-      </tr>
-      ${officers.map(u=>{
-        const d=classData[u.class_assigned];
-        if(!d) return '';
-        return`<tr>
-          <td><b>${u.class_assigned}</b></td>
-          <td style="text-align:center">${d.count}</td>
-          ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(d.ratings[c.k])}">${d.ratings[c.k]!=null?d.ratings[c.k].toFixed(2):'—'}</span></td>`).join('')}
-          <td style="text-align:center"><span class="badge ${badgeClass(d.ratings.overall)}">${d.ratings.overall!=null?d.ratings.overall.toFixed(2):'—'}</span></td>
-        </tr>`;
-      }).join('')}
-      <tr class="avg-row">
-        <td><b>NCR AVERAGE</b></td>
-        <td style="text-align:center">${submitted.length}</td>
-        ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(regAvg[c.k])}">${regAvg[c.k]!=null?regAvg[c.k].toFixed(2):'—'}</span></td>`).join('')}
-        <td style="text-align:center"><span class="badge ${badgeClass(regAvg.overall)}">${regAvg.overall!=null?regAvg.overall.toFixed(2):'—'}</span></td>
-      </tr>
-    </table>
-
-    <h2>Consolidated Findings &amp; Recommendations per Category</h2>
-    ${CATS.map(c=>{
-      const findings=submitted.map(s=>({cls:s.class_name,txt:s.data?.summary?.findings?.[c.k]})).filter(x=>x.txt);
-      const recs=submitted.map(s=>({cls:s.class_name,txt:s.data?.summary?.recommendations?.[c.k]})).filter(x=>x.txt);
-      return`<div class="fin-box">
-        <b>${c.lbl}</b>
-        <table style="margin-top:6px">
-          <tr><th>Class</th><th>Findings</th><th>Recommendations</th></tr>
-          ${officers.map(u=>{
-            const f=findings.find(x=>x.cls===u.class_assigned);
-            const r=recs.find(x=>x.cls===u.class_assigned);
-            return`<tr><td><b>${u.class_assigned}</b></td><td>${f?.txt||'—'}</td><td>${r?.txt||'—'}</td></tr>`;
-          }).join('')}
-        </table>
-      </div>`;
-    }).join('')}
-
-    <h2>Per-Day Breakdown (All Classes &amp; Days)</h2>
-    <table>
-      <tr><th>Class</th><th>Day</th><th>Date</th>
-        ${CATS.map(c=>`<th style="font-size:9px">${c.lbl}</th>`).join('')}
-        <th>Overall</th>
-      </tr>
-      ${submitted.sort((a,b)=>(a.class_name>b.class_name?1:-1)||(a.training_day>b.training_day?1:-1)).map(s=>{
-        const R=computeRatings(s.data);
-        return`<tr>
-          <td><b>${s.class_name}</b></td>
-          <td>${s.training_day}</td>
-          <td>${s.obs_date||'—'}</td>
-          ${CATS.map(c=>`<td style="text-align:center">${R[c.k]!=null?R[c.k].toFixed(2):'—'}</td>`).join('')}
-          <td style="text-align:center"><b>${R.overall!=null?R.overall.toFixed(2):'—'}</b></td>
-        </tr>`;
-      }).join('')}
-    </table>
-
-    <h2>Rating Scale Reference</h2>
-    <table>
-      <tr><th>Rating</th><th>Description</th><th>Suggested Immediate Action</th></tr>
-      <tr><td>3.6 – 4.0</td><td>Fully met all agreed standards and Exceeded Expectations</td><td>Feedback to program owner</td></tr>
-      <tr><td>2.6 – 3.5</td><td>Fully met all agreed standards and expectations</td><td>Feedback to program owner</td></tr>
-      <tr><td>1.6 – 2.4</td><td>Partially met all agreed standards and expectations</td><td>Feedback + debriefing</td></tr>
-      <tr><td>1.0 – 1.5</td><td>Minimal conformance to all agreed standards</td><td>Feedback + debriefing</td></tr>
-    </table>
-
-    <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px">
-      <p><b>Prepared by: Super Administrator / Training Coordinator</b></p>
-      <p>Date: ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})}</p>
-    </div>
-  </body></html>`);
-  pw.document.close();
-};
-
-// ================================================================
-// ADMIN: ALL SUBMISSIONS
-// ================================================================
-async function renderAllSubs(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">📋 All Submissions</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
-  const subs=await loadAllSubs();
-  mc.innerHTML=`<div class="page-title">📋 All Submissions</div>
-    <div class="page-sub">${subs.length} total records</div>
-    ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No records yet. M&E Officers need to submit their observations first.</p></div>`:`
-    <div class="card"><table>
-      <tr><th>Class</th><th>Day</th><th>Date</th><th>Officer</th><th>Status</th><th>Overall</th><th>Updated</th><th>Action</th></tr>
-      ${subs.map(s=>{
-        const R=computeRatings(s.data);
-        return`<tr>
-          <td><b>${s.class_name||'—'}</b></td>
-          <td>${s.training_day||'—'}</td>
-          <td>${s.obs_date||'—'}</td>
-          <td style="font-size:11px">${s.username||'—'}</td>
-          <td><span class="badge ${s.status==='submitted'?'b-met':'b-partial'}">${s.status}</span></td>
-          <td><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${(s.updated_at||'').split('T')[0]}</td>
-          <td style="display:flex;gap:4px">
-            <button class="btn btn-primary btn-sm" onclick="adminViewSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁</button>
-            <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️</button>
-          </td>
-        </tr>`;
-      }).join('')}
-    </table></div>`}`;
-}
-
-window.adminViewSub=function(sub){
-  const mc=document.getElementById('mainContent');
-  const R=computeRatings(sub.data);
-  mc.innerHTML=`
-    <button class="btn btn-primary btn-sm" onclick="renderAllSubs()" style="margin-bottom:12px">← All Submissions</button>
-    <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(sub).replace(/"/g,'&quot;')})" style="margin-bottom:12px">🖨️ Print / Save PDF</button>
-    ${buildReportHTML(sub,R,true)}`;
-};
-
-
-
-// ================================================================
-// ADMIN: MANAGE USERS
-// ================================================================
-async function renderUsers(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">👤 Manage Users</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
-  let users=[],uFallback=true;
-  if(IS_SB()){
-    try{users=await sbGet('me_users','?order=role.asc,class_assigned.asc')||[];uFallback=false;}
-    catch(er){users=ACCOUNTS;}
-  }else{users=ACCOUNTS;}
-  mc.innerHTML=`<div class="page-title">👤 Manage Users</div>
-    ${uFallback?`<div class="msg msg-info show" style="margin-bottom:12px">⚠️ Showing built-in accounts. Connect Supabase to manage users in the database.</div>`:''}
-    <div class="card"><h3>Add New User ${uFallback?'(requires Supabase)':''}</h3>
-      ${uFallback?`<p style="color:var(--muted);font-size:13px">Configure Supabase to enable adding users.</p>`:`
-      <div class="fr2">
-        <div class="fg"><label>Full Name</label><input type="text" id="nu_n" placeholder="Full name"></div>
-        <div class="fg"><label>Username</label><input type="text" id="nu_u" placeholder="Username"></div>
-      </div>
-      <div class="fr2">
-        <div class="fg"><label>Password</label><input type="text" id="nu_p" placeholder="Password"></div>
-        <div class="fg"><label>Role</label><select id="nu_r" onchange="tglCls()">
-          <option value="me_officer">M&E Officer</option>
-          <option value="superadmin">Super Administrator</option>
-        </select></div>
-      </div>
-      <div class="fg" id="nu_cw" style="max-width:200px">
-        <label>Assigned Class</label>
-        <select id="nu_c">${Array.from({length:12},(_,i)=>`<option>Class ${i+1}</option>`).join('')}</select>
-      </div>
-      <div id="nuMsg"></div>
-      <button class="btn btn-success" style="margin-top:10px" onclick="addUser()">➕ Add User</button>`}
-    </div>
-    <div class="card"><h3>All Users (${users.length})</h3>
-      <table>
-        <tr><th>Name</th><th>Username</th><th>Password</th><th>Role</th><th>Class</th>${!uFallback?'<th>Del</th>':''}</tr>
-        ${users.map(u=>`<tr>
-          <td>${u.name}</td>
-          <td><code style="font-size:11px">${u.username}</code></td>
-          <td><code style="font-size:11px">${u.password||'—'}</code></td>
-          <td><span class="badge ${u.role==='superadmin'?'b-met':'b-partial'}">${u.role}</span></td>
-          <td>${u.class_assigned||'—'}</td>
-          ${!uFallback?`<td>${u.username!==CU.username?`<button class="btn btn-danger btn-sm" onclick="delUser('${u.id}','${(u.name||'').replace(/'/g,"\\'")}')">🗑</button>`:'<em style="font-size:10px">You</em>'}</td>`:''}
-        </tr>`).join('')}
-      </table>
-    </div>`;
-}
-window.tglCls=function(){const r=document.getElementById('nu_r')?.value;const w=document.getElementById('nu_cw');if(w)w.style.display=r==='superadmin'?'none':'flex';};
-window.addUser=async function(){
-  const n=g('nu_n'),u=g('nu_u'),p=g('nu_p'),r=g('nu_r'),c=r==='superadmin'?null:g('nu_c');
-  if(!n||!u||!p){document.getElementById('nuMsg').innerHTML=`<div class="msg msg-error show">⚠️ Name, username, password required.</div>`;return;}
-  try{
-    await sbUpsert('me_users',{name:n,username:u,password:p,role:r,class_assigned:c,created_at:new Date().toISOString()});
-    document.getElementById('nuMsg').innerHTML=`<div class="msg msg-success show">✅ User "${n}" added!</div>`;
-    setTimeout(renderUsers,1600);
-  }catch(er){document.getElementById('nuMsg').innerHTML=`<div class="msg msg-error show">❌ ${er.message}</div>`;}
-};
-window.delUser=async function(id,name){
-  if(!confirm(`Delete user "${name}"?`))return;
-  try{await sbDelete('me_users',`?id=eq.${id}`);renderUsers();}
-  catch(er){alert('Error: '+er.message);}
-};
-
-// ================================================================
-// ================================================================
-// ADMIN: IMPORT / EXPORT UTILITIES
-// ================================================================
-window.importSubmissions=function(files){
-  if(!files||!files.length) return;
-  let imported=lsLoadImported();
-  let count=0;
-  const readers=Array.from(files).map(file=>new Promise(res=>{
-    const fr=new FileReader();
-    fr.onload=ev=>{
-      try{
-        const data=JSON.parse(ev.target.result);
-        const records=Array.isArray(data)?data:[data];
-        records.forEach(rec=>{
-          if(!rec.username||!rec.training_day) return;
-          const idx=imported.findIndex(s=>s.username===rec.username&&s.training_day===rec.training_day);
-          if(idx>=0) imported[idx]=rec; else imported.push(rec);
-          count++;
-        });
-      }catch(e){alert('⚠️ Invalid JSON file: '+file.name);}
-      res();
-    };
-    fr.readAsText(file);
-  }));
-  Promise.all(readers).then(()=>{
-    lsSaveImported(imported);
-    alert(`✅ Successfully imported ${count} record(s). Refreshing dashboard...`);
-    renderDashboard();
-  });
-};
-
-window.clearImported=function(){
-  if(!confirm('Clear all imported M&E data? This cannot be undone.')) return;
-  lsSaveImported([]);
-  alert('✅ Imported data cleared.');
-  renderDashboard();
-};
-
-window.viewClassDetail=async function(cls){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div style="color:var(--muted);padding:10px">Loading…</div>`;
-  const allSubs=await loadAllSubs();
-  const subs=allSubs.filter(s=>s.class_name===cls&&s.status==='submitted');
-  mc.innerHTML=`
-    <button class="btn btn-primary btn-sm" onclick="renderDashboard()" style="margin-bottom:12px">← Dashboard</button>
-    <div class="page-title">📋 ${cls} — Submitted Reports</div>
-    <div class="page-sub">${subs.length} submitted observation(s)</div>
-    ${subs.length===0?`<div class="card"><p style="color:var(--muted)">No submissions yet for ${cls}.</p></div>`:`
-    <div class="card"><table>
-      <tr><th>Training Day</th><th>Date</th><th>Overall Rating</th><th>Description</th><th>Action</th></tr>
-      ${subs.map(s=>{
-        const R=computeRatings(s.data);
-        return`<tr>
-          <td><b>${s.training_day||'—'}</b></td>
-          <td>${s.obs_date||'—'}</td>
-          <td><span class="badge ${badgeClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${ratingLabel(R.overall)}</td>
-          <td style="display:flex;gap:4px">
-            <button class="btn btn-primary btn-sm" onclick="adminViewSub(${JSON.stringify(s).replace(/"/g,'&quot;')})">👁 View</button>
-            <button class="btn btn-pdf btn-sm" onclick="printSubReport(${JSON.stringify(s).replace(/"/g,'&quot;')})">🖨️ PDF</button>
-          </td>
-        </tr>`;
-      }).join('')}
-    </table></div>`}`;
-};
-function renderHelp(){
-  const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">❓ Help &amp; User Guide</div>
-  <div class="card"><h3>${CU.role==='superadmin'?'Admin Guide':'M&E Officer Guide'}</h3>
-  <div style="font-size:13px;line-height:2.1">
-  ${CU.role==='superadmin'?`
-    <p><b>📊 Dashboard</b> — See submission status per class, average ratings, and days covered.</p>
-    <p><b>📈 Consolidated Report</b> — View and print the full consolidated M&E report across all 12 classes with NCR-wide averages per category, findings, and recommendations.</p>
-    <p><b>📋 All Submissions</b> — View, inspect, or print any individual submission from any class and any training day.</p>
-    <p><b>👤 Manage Users</b> — Add or remove M&E Officer accounts (requires Supabase).</p>
-  `:`
-    <p><b>📝 Observation Form</b> — Fill in all 10 sections matching the Excel M&E and Process Observation Tool exactly. Use the tabs to navigate between sections.</p>
-    <p><b>💾 Save Draft</b> — Saves your progress without submitting. You can continue later by clicking "Load Draft".</p>
-    <p><b>📤 Submit</b> — Finalizes and sends your observation. Complete the Class Manager and Trainers fields first.</p>
-    <p><b>🖨️ Print / Save PDF</b> — Opens a print-ready version. In the print dialog, select "Save as PDF" to download a PDF copy.</p>
-    <p><b>📋 My Submissions</b> — View all your submitted observations with computed ratings per category. Each submission has a View and Print/PDF button.</p>
-    <p><b>⚠️ You are assigned to: <span style="color:var(--primary)">${CU.class_assigned}</span></b></p>
-  `}
-  </div></div>
-  <div class="card"><h3>Rating Scale Reference</h3>
-  <table>
-    <tr><th>Rating</th><th>Description</th><th>Points (ABCD)</th></tr>
-    <tr><td>3.6 – 4.0</td><td>Exceeded Expectations</td><td>A = 4 pts</td></tr>
-    <tr><td>2.6 – 3.5</td><td>Fully Met Expectations</td><td>B = 3 pts</td></tr>
-    <tr><td>1.6 – 2.4</td><td>Partially Met</td><td>C = 2 pts</td></tr>
-    <tr><td>1.0 – 1.5</td><td>Minimal Conformance</td><td>D = 1 pt</td></tr>
-  </table></div>
-  <div class="card"><h3>7 Categories in the M&E Tool</h3>
-  <table>
-    <tr><th>#</th><th>Category</th><th>Sub-items</th></tr>
-    ${CATS.map((c,i)=>`<tr><td>${i+1}</td><td><b>${c.lbl}</b></td><td style="font-size:11px;color:var(--muted)">${c.q}</td></tr>`).join('')}
-  </table></div>`;
-}
-
-// ================================================================
-// SHARED UTILITIES
-// ================================================================
+// ─── SUPERADMIN ─────────────────────────────────────────────────────────────
 async function loadAllSubs(){
-  let subs=[];
-  if(IS_SB()){
-    try{subs=await sbGet('me_obs','?order=class_name.asc,training_day.asc')||[];}
-    catch(er){console.warn('DB load failed:',er);}
+  setState({superLoading:true});
+  const results=[];
+  for(let i=1;i<=12;i++){
+    const key=`me${String(i).padStart(2,'0')}`;
+    const sub=await storageLoad(`submission_${key}`,true);
+    if(sub&&sub.submittedBy)results.push(sub);
   }
-  if(!subs.length) subs=lsLoad();
-  // Merge with imported subs (superadmin import feature)
-  const imported=lsLoadImported();
-  imported.forEach(imp=>{
-    const idx=subs.findIndex(s=>s.username===imp.username&&s.training_day===imp.training_day);
-    if(idx>=0) subs[idx]=imp; else subs.push(imp);
-  });
-  return subs;
+  setState({superSubs:results.sort((a,b)=>a.classNum-b.classNum),superLoading:false,superLastUpdate:new Date()});
 }
 
-function buildReportHTML(sub,R,isAdmin){
-  const fd=sub.data;
-  if(!fd) return '<div class="card"><p>No data.</p></div>';
-  const rpCnt=Object.values(fd.rps?.chk||{}).filter(Boolean).length;
-  const pmCnt=Object.values(fd.pm?.chk||{}).filter(Boolean).length;
-  const enCnt=Object.values(fd.envi?.chk||{}).filter(Boolean).length;
-  return`
-    <div class="page-title">Observation Report — ${sub.class_name} — ${sub.training_day}</div>
-    <div class="page-sub">${sub.obs_date} &nbsp;|&nbsp; ${sub.username} &nbsp;|&nbsp;
-      <span class="badge ${sub.status==='submitted'?'b-met':'b-partial'}">${sub.status}</span></div>
-    <div class="card"><h3>Overall Rating</h3>
-      <div class="overall-box">
-        <div class="overall-num ${ratingClass(R.overall)}">${R.overall!=null?R.overall.toFixed(2):'—'}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px">${ratingLabel(R.overall)}</div>
+// ─── RENDER LOGIN ──────────────────────────────────────────────────────────
+function renderLogin(){
+  const{loginUser,loginPass,loginErr}=state;
+  return `
+<div style="min-height:500px;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);display:flex;align-items:center;justify-content:center;padding:20px">
+<div style="background:var(--color-background-primary);border-radius:16px;padding:36px;width:340px;max-width:100%;border:0.5px solid var(--color-border-tertiary)">
+  <div style="text-align:center;margin-bottom:24px">
+    <div style="font-size:36px;margin-bottom:8px">📋</div>
+    <h1 style="font-size:20px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px">M&amp;E Form System</h1>
+    <p style="font-size:12px;color:var(--color-text-secondary)">Class 12 · Real-time Monitoring &amp; Evaluation</p>
+  </div>
+  ${loginErr?`<div style="background:#fee2e2;color:#b91c1c;padding:8px 12px;border-radius:6px;margin-bottom:14px;font-size:12px">${loginErr}</div>`:''}
+  <div style="margin-bottom:12px">
+    <label style="display:block;font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px">Username</label>
+    <input id="li-user" value="${loginUser}" placeholder="me01 – me12 or superadmin" style="font-size:13px"/>
+  </div>
+  <div style="margin-bottom:20px">
+    <label style="display:block;font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px">Password</label>
+    <input id="li-pass" type="password" value="${loginPass}" placeholder="Enter password"/>
+  </div>
+  <button id="li-btn" style="width:100%;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500">Log In</button>
+  <div style="margin-top:18px;background:var(--color-background-secondary);border-radius:8px;padding:12px;font-size:11px;color:var(--color-text-secondary);line-height:1.7">
+    <strong>M&amp;E Accounts:</strong> me01 – me12 / <code>me2024</code><br/>
+    <strong>Super Admin:</strong> superadmin / <code>super2024</code>
+  </div>
+</div>
+</div>`;
+}
+
+// ─── RENDER FORM FIELD ──────────────────────────────────────────────────────
+function renderField(f,val,ro){
+  const base=`width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;font-family:var(--font-sans);color:var(--color-text-primary);background:${ro?'var(--color-background-secondary)':'var(--color-background-primary)'}`;
+  let inp='';
+  if(f.t==='rating'){
+    const btns=[1,2,3,4,5].map(n=>{
+      const sel=val==n;
+      return `<button class="rbtn${ro?' rbtn-ro':''}" data-key="${f.k}" data-val="${n}" style="padding:5px 11px;border-radius:20px;border:1.5px solid ${sel?'#2563eb':'var(--color-border-secondary)'};background:${sel?'#2563eb':'var(--color-background-primary)'};color:${sel?'#fff':'var(--color-text-secondary)'};font-size:12px;cursor:${ro?'default':'pointer'};${ro?'pointer-events:none':''}">
+        ${n} — ${RLABELS[n]}
+      </button>`;
+    }).join('');
+    inp=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px">${btns}</div>`;
+  } else if(f.t==='textarea'){
+    inp=`<textarea class="ff" data-key="${f.k}" rows="3" style="${base};resize:vertical" ${ro?'readonly':''}>${escHtml(val||'')}</textarea>`;
+  } else if(f.t==='select'){
+    const opts=(f.opts||[]).map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('');
+    inp=`<select class="ff" data-key="${f.k}" style="${base}" ${ro?'disabled':''}>
+      <option value="">— Select —</option>${opts}
+    </select>`;
+  } else {
+    inp=`<input class="ff" type="${f.t}" data-key="${f.k}" value="${escHtml(val||'')}" style="${base}" ${ro?'readonly':''}/>`;
+  }
+  return `<div style="margin-bottom:14px">
+    <label style="display:block;font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px">${f.l}</label>
+    ${inp}
+  </div>`;
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ─── RENDER FORM ────────────────────────────────────────────────────────────
+function renderForm(){
+  const{user,formData,formStatus,activeSection,busy,toast,confirmOpen,confirmMsg}=state;
+  const isSubmitted=formStatus==='submitted';
+  const sec=SECTIONS.find(s=>s.id===activeSection);
+  const tabs=SECTIONS.map(s=>{
+    const active=s.id===activeSection;
+    return `<button class="tab-btn" data-sid="${s.id}" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${active?'#2563eb':'var(--color-border-tertiary)'};background:${active?'#2563eb':'var(--color-background-primary)'};color:${active?'#fff':'var(--color-text-secondary)'};font-size:12px;white-space:nowrap;font-weight:${active?'500':'400'}">${s.label}</button>`;
+  }).join('');
+
+  const fields=sec.fields.map(f=>renderField(f,formData[f.k],isSubmitted)).join('');
+
+  const actionBtns=isSubmitted?`
+    <button disabled style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:default">
+      ✅ Submitted
+    </button>
+  `:`
+    <button id="btn-save" ${busy?'disabled':''} style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:#1e3a5f;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500">
+      💾 Save Draft
+    </button>
+    <button id="btn-submit" ${busy?'disabled':''} style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500">
+      📤 Submit
+    </button>
+    <button id="btn-load" ${busy?'disabled':''} style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500">
+      📂 Load Draft
+    </button>
+  `;
+
+  const toastHtml=toast?`
+    <div style="position:fixed;bottom:20px;right:20px;z-index:9999;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;background:${toast.type==='error'?'#ef4444':'#10b981'};color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:320px">
+      ${toast.type==='error'?'❌':'✅'} ${toast.msg}
+    </div>`:'';
+
+  const confirmHtml=confirmOpen?`
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--color-background-primary);border-radius:12px;padding:28px;max-width:380px;width:100%;border:0.5px solid var(--color-border-secondary)">
+        <h3 style="font-size:15px;font-weight:500;margin-bottom:12px;color:var(--color-text-primary)">Confirm Submission</h3>
+        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:20px;line-height:1.6">${confirmMsg}</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button id="conf-cancel" style="padding:8px 18px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:13px">Cancel</button>
+          <button id="conf-ok" style="padding:8px 18px;border:none;border-radius:6px;background:#16a34a;color:#fff;font-size:13px;font-weight:500">Yes, Submit</button>
+        </div>
       </div>
-      <table>
-        <tr><th>Category</th><th>Rating</th><th>Description</th><th>Suggested Action</th></tr>
-        ${CATS.map(c=>{const r=R[c.k];return`<tr>
-          <td><b>${c.lbl}</b></td>
-          <td><span class="badge ${badgeClass(r)}">${r!=null?r.toFixed(2):'—'}</span></td>
-          <td style="font-size:11px">${ratingLabel(r)}</td>
-          <td style="font-size:11px">${r!=null&&r<2.6?'Feedback + Debriefing':r!=null?'Feedback to Program Owner':'—'}</td>
-        </tr>`;}).join('')}
-      </table>
+    </div>`:'';
+
+  return `
+<div style="min-height:500px;background:var(--color-background-tertiary)" id="no-print">
+  ${toastHtml}${confirmHtml}
+  <!-- Header -->
+  <div style="background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:16px;font-weight:500;color:var(--color-text-primary)">📋 M&amp;E &amp; Process Observation Form</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">${user.label} · Class 12 · Fill all 10 sections
+        ${isSubmitted?'<span style="margin-left:8px;color:#10b981;font-weight:500">✅ Submitted</span>':formStatus==='draft'?'<span style="margin-left:8px;color:#f59e0b;font-weight:500">📝 Draft saved</span>':''}
+      </div>
     </div>
-    <div class="card"><h3>Profile</h3>
-      <table>
-        <tr><td><b>PD Program</b></td><td colspan="3">${fd.meta?.pd_title||'—'}</td></tr>
-        <tr><td><b>Class</b></td><td>${fd.meta?.class_name||'—'}</td><td><b>Day</b></td><td>${fd.meta?.training_day||'—'}</td></tr>
-        <tr><td><b>Date</b></td><td>${fd.meta?.obs_date||'—'}</td><td><b>No. Participants</b></td><td>${fd.meta?.num_participants||'—'}</td></tr>
-        <tr><td><b>Class Manager</b></td><td>${fd.meta?.class_manager||'—'}</td><td><b>Trainers</b></td><td>${fd.meta?.trainers||'—'}</td></tr>
-      </table>
+    <button id="btn-logout" style="padding:6px 14px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:12px">Logout</button>
+  </div>
+  <!-- Tabs -->
+  <div style="background:var(--color-background-primary);padding:10px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;flex-wrap:wrap;gap:6px;overflow-x:auto">
+    ${tabs}
+  </div>
+  <!-- Content -->
+  <div style="max-width:760px;margin:20px auto;padding:0 16px 100px">
+    ${isSubmitted?'<div style="background:#dcfce7;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#15803d;font-weight:500">✅ This form has been submitted and reflected to the Super Admin. This is now read-only.</div>':''}
+    <div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:24px;border:0.5px solid var(--color-border-tertiary)">
+      <h2 style="font-size:16px;font-weight:500;color:#1e3a5f;margin-bottom:20px">${sec.title}</h2>
+      ${fields}
+      <!-- Navigation -->
+      <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary)">
+        <button id="btn-prev" ${activeSection===1?'disabled':''} style="padding:8px 18px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:13px;opacity:${activeSection===1?'0.4':'1'}">← Previous</button>
+        <span style="font-size:12px;color:var(--color-text-secondary);align-self:center">Section ${activeSection} of 10</span>
+        <button id="btn-next" ${activeSection===10?'disabled':''} style="padding:8px 18px;border:none;background:#2563eb;color:#fff;border-radius:6px;font-size:13px;font-weight:500;opacity:${activeSection===10?'0.4':'1'}">Next →</button>
+      </div>
     </div>
-    ${fd.incidents?.length?`<div class="card"><h3>Critical Incidents (${fd.incidents.length})</h3>
-      ${fd.incidents.map((inc,i)=>`<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
-        <b>Incident #${i+1}</b><br>
-        <span style="color:var(--muted);font-size:11px">Situation:</span> ${inc.situation||'—'}<br>
-        <span style="color:var(--muted);font-size:11px">Action:</span> ${inc.action||'—'}<br>
-        <span style="color:var(--muted);font-size:11px">Result:</span> ${inc.result||'—'}
-      </div>`).join('')}</div>`:''}
-    <div class="card"><h3>Checklists Summary</h3>
-      <table>
-        <tr><th>Section</th><th>Items Met</th><th>Total</th><th>Percentage</th></tr>
-        <tr><td>Resource Persons Standards (DM 44)</td><td>${rpCnt}</td><td>${RP_STDS.length}</td><td>${Math.round(rpCnt/RP_STDS.length*100)}%</td></tr>
-        <tr><td>Program Management Standards</td><td>${pmCnt}</td><td>${PM_ITEMS.length}</td><td>${Math.round(pmCnt/PM_ITEMS.length*100)}%</td></tr>
-        <tr><td>Learning Environment Indicators</td><td>${enCnt}</td><td>${ENV_ITEMS.length}</td><td>${Math.round(enCnt/ENV_ITEMS.length*100)}%</td></tr>
-      </table>
+    <!-- Action buttons -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px">
+      ${actionBtns}
+      <button id="btn-print" style="display:flex;align-items:center;gap:6px;padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500">
+        🖨️ Print / Save PDF
+      </button>
     </div>
-    <div class="card"><h3>Findings &amp; Recommendations</h3>
-      <table>
-        <tr><th>Category</th><th>Major Observations &amp; Findings</th><th>Recommendations</th></tr>
-        ${CATS.map(c=>`<tr>
-          <td><b>${c.lbl}</b></td>
-          <td>${fd.summary?.findings?.[c.k]||'—'}</td>
-          <td>${fd.summary?.recommendations?.[c.k]||'—'}</td>
-        </tr>`).join('')}
-      </table>
+  </div>
+</div>`;
+}
+
+// ─── RENDER SUPERADMIN ───────────────────────────────────────────────────────
+function renderSuperAdmin(){
+  const{superSubs,superLoading,superSelected,superSection,superLastUpdate,toast,user}=state;
+  const toastHtml=toast?`<div style="position:fixed;bottom:20px;right:20px;z-index:9999;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;background:${toast.type==='error'?'#ef4444':'#10b981'};color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2)">${toast.type==='error'?'❌':'✅'} ${toast.msg}</div>`:'';
+
+  if(superSelected){
+    const d=superSelected.formData;
+    const sec=SECTIONS.find(s=>s.id===superSection);
+    const tabs=SECTIONS.map(s=>{
+      const active=s.id===superSection;
+      return `<button class="sa-tab" data-sid="${s.id}" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${active?'#1e3a5f':'var(--color-border-tertiary)'};background:${active?'#1e3a5f':'var(--color-background-primary)'};color:${active?'#fff':'var(--color-text-secondary)'};font-size:12px;white-space:nowrap">${s.label}</button>`;
+    }).join('');
+    const fields=sec.fields.map(f=>renderField(f,d[f.k],true)).join('');
+    return `
+<div style="min-height:500px;background:var(--color-background-tertiary)">${toastHtml}
+  <div style="background:#1e3a5f;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:15px;font-weight:500">📋 ${superSelected.accountLabel} — Submission</div>
+      <div style="font-size:11px;opacity:0.75">Submitted: ${new Date(superSelected.submittedAt).toLocaleString()} · Read-only</div>
+    </div>
+    <button id="sa-back" style="padding:7px 14px;background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;font-size:12px;cursor:pointer">← Back to Dashboard</button>
+  </div>
+  <div style="background:var(--color-background-primary);padding:10px 20px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;flex-wrap:wrap;gap:6px">${tabs}</div>
+  <div style="max-width:760px;margin:20px auto;padding:0 16px 40px">
+    <div style="background:#fef3c7;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e">🔒 Super Admin View — Read-only. Editing is not allowed on submitted forms.</div>
+    <div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:24px;border:0.5px solid var(--color-border-tertiary)">
+      <h2 style="font-size:16px;font-weight:500;color:#1e3a5f;margin-bottom:20px">${sec.title}</h2>
+      ${fields}
+      <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary)">
+        <button class="sa-nav" data-dir="-1" ${superSection===1?'disabled':''} style="padding:8px 18px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:13px;opacity:${superSection===1?'0.4':'1'}">← Previous</button>
+        <span style="font-size:12px;color:var(--color-text-secondary);align-self:center">Section ${superSection} of 10</span>
+        <button class="sa-nav" data-dir="1" ${superSection===10?'disabled':''} style="padding:8px 18px;border:none;background:#1e3a5f;color:#fff;border-radius:6px;font-size:13px;opacity:${superSection===10?'0.4':'1'}">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+  }
+
+  // Dashboard
+  const submitted=superSubs.length;
+  const pending=12-submitted;
+  const cards=ME_ACCTS.map(acct=>{
+    const sub=superSubs.find(s=>s.submittedBy===acct.username);
+    return `<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:18px;border:${sub?'1.5px solid #10b981':'0.5px solid var(--color-border-tertiary)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--color-text-primary)">${acct.label}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">@${acct.username}</div>
+        </div>
+        <span style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;background:${sub?'#dcfce7':'#fef3c7'};color:${sub?'#15803d':'#92400e'}">
+          ${sub?'✅ Submitted':'⏳ Pending'}
+        </span>
+      </div>
+      ${sub
+        ?`<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:10px">${new Date(sub.submittedAt).toLocaleString()}</div>
+          <button class="view-sub" data-username="${acct.username}" style="width:100%;padding:7px;background:#1e3a5f;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">View Submission →</button>`
+        :`<div style="font-size:12px;color:var(--color-text-secondary);font-style:italic">No submission yet.</div>`
+      }
     </div>`;
+  }).join('');
+
+  return `
+<div style="min-height:500px;background:var(--color-background-tertiary)">${toastHtml}
+  <div style="background:#1e3a5f;color:#fff;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:16px;font-weight:500">🏛️ Super Admin Dashboard</div>
+      <div style="font-size:11px;opacity:0.75">M&amp;E Consolidator View · ${superLastUpdate?`Updated ${superLastUpdate.toLocaleTimeString()}`:'Loading...'}</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button id="sa-refresh" style="padding:7px 14px;background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;font-size:12px;cursor:pointer">🔄 Refresh</button>
+      <button id="sa-logout" style="padding:7px 14px;background:#ef4444;border:none;color:#fff;border-radius:6px;font-size:12px;cursor:pointer">Logout</button>
+    </div>
+  </div>
+  <div style="padding:20px;max-width:1100px;margin:0 auto">
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+      <div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:16px;border-left:4px solid #2563eb;border-top:0.5px solid var(--color-border-tertiary);border-right:0.5px solid var(--color-border-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Total Accounts</div>
+        <div style="font-size:28px;font-weight:500;color:#2563eb">12</div>
+      </div>
+      <div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:16px;border-left:4px solid #10b981;border-top:0.5px solid var(--color-border-tertiary);border-right:0.5px solid var(--color-border-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Submitted</div>
+        <div style="font-size:28px;font-weight:500;color:#10b981">${submitted}</div>
+      </div>
+      <div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:16px;border-left:4px solid #f59e0b;border-top:0.5px solid var(--color-border-tertiary);border-right:0.5px solid var(--color-border-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Pending</div>
+        <div style="font-size:28px;font-weight:500;color:#f59e0b">${pending}</div>
+      </div>
+    </div>
+    <!-- Cards -->
+    ${superLoading?'<div style="text-align:center;padding:40px;color:var(--color-text-secondary);font-size:13px">Loading submissions...</div>'
+      :`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">${cards}</div>`}
+  </div>
+</div>`;
 }
 
-// Small helpers
-function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function g(id){const el=document.getElementById(id);return el?el.value:'';}
-function rv(name){const el=document.querySelector(`.abcd-opt.sel[data-name="${name}"]`);return el?el.dataset.val:'';}
-function showMsg(el,txt,type){el.textContent=txt;el.className=`msg msg-${type} show`;if(type==='success')setTimeout(()=>{el.className='msg msg-success';},5000);}
+// ─── EVENT BINDING ──────────────────────────────────────────────────────────
+function attachEvents(){
+  // Login
+  const liUser=document.getElementById('li-user');
+  const liPass=document.getElementById('li-pass');
+  const liBtn=document.getElementById('li-btn');
+  if(liUser){
+    liUser.addEventListener('input',e=>{ state.loginUser=e.target.value; });
+    liUser.addEventListener('keydown',e=>{ if(e.key==='Enter')doLogin(); });
+  }
+  if(liPass){
+    liPass.addEventListener('input',e=>{ state.loginPass=e.target.value; });
+    liPass.addEventListener('keydown',e=>{ if(e.key==='Enter')doLogin(); });
+  }
+  if(liBtn) liBtn.addEventListener('click',doLogin);
 
-function abcd(name,selected){
-  return`<div class="abcd-group">${ABCD.map(o=>`
-    <div class="abcd-opt${selected===o.v?' sel':''}" data-name="${name}" data-val="${o.v}" onclick="selAbcd(this,'${name}')">
-      ${o.lbl}
-    </div>`).join('')}</div>`;
+  // Form buttons
+  const btnLogout=document.getElementById('btn-logout');
+  const btnSave=document.getElementById('btn-save');
+  const btnSubmit=document.getElementById('btn-submit');
+  const btnLoad=document.getElementById('btn-load');
+  const btnPrint=document.getElementById('btn-print');
+  const btnPrev=document.getElementById('btn-prev');
+  const btnNext=document.getElementById('btn-next');
+  const confCancel=document.getElementById('conf-cancel');
+  const confOk=document.getElementById('conf-ok');
+
+  if(btnLogout) btnLogout.addEventListener('click',doLogout);
+  if(btnSave) btnSave.addEventListener('click',doSaveDraft);
+  if(btnSubmit) btnSubmit.addEventListener('click',()=>{
+    openConfirm('Are you sure you want to submit this form? You will not be able to edit it after submission. The Super Admin will be able to view your submission.',()=>doSubmit());
+  });
+  if(btnLoad) btnLoad.addEventListener('click',doLoadDraft);
+  if(btnPrint) btnPrint.addEventListener('click',doPrint);
+  if(btnPrev) btnPrev.addEventListener('click',()=>{ if(state.activeSection>1)setState({activeSection:state.activeSection-1}); });
+  if(btnNext) btnNext.addEventListener('click',()=>{ if(state.activeSection<10)setState({activeSection:state.activeSection+1}); });
+  if(confCancel) confCancel.addEventListener('click',closeConfirm);
+  if(confOk) confOk.addEventListener('click',execConfirm);
+
+  // Section tabs
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>setState({activeSection:parseInt(btn.dataset.sid)}));
+  });
+
+  // Form fields
+  document.querySelectorAll('.ff').forEach(el=>{
+    el.addEventListener('change',e=>{
+      if(state.formStatus==='submitted')return;
+      const key=e.target.dataset.key;
+      state.formData={...state.formData,[key]:e.target.value};
+    });
+    el.addEventListener('input',e=>{
+      if(state.formStatus==='submitted')return;
+      const key=e.target.dataset.key;
+      state.formData={...state.formData,[key]:e.target.value};
+    });
+  });
+
+  // Rating buttons
+  document.querySelectorAll('.rbtn:not(.rbtn-ro)').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(state.formStatus==='submitted')return;
+      const key=btn.dataset.key;
+      const val=btn.dataset.val;
+      state.formData={...state.formData,[key]:val};
+      render();
+    });
+  });
+
+  // Superadmin
+  const saRefresh=document.getElementById('sa-refresh');
+  const saLogout=document.getElementById('sa-logout');
+  const saBack=document.getElementById('sa-back');
+  if(saRefresh) saRefresh.addEventListener('click',loadAllSubs);
+  if(saLogout) saLogout.addEventListener('click',doLogout);
+  if(saBack) saBack.addEventListener('click',()=>setState({superSelected:null,superSection:1}));
+
+  document.querySelectorAll('.sa-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>setState({superSection:parseInt(btn.dataset.sid)}));
+  });
+
+  document.querySelectorAll('.sa-nav').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const dir=parseInt(btn.dataset.dir);
+      const ns=state.superSection+dir;
+      if(ns>=1&&ns<=10)setState({superSection:ns});
+    });
+  });
+
+  document.querySelectorAll('.view-sub').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const sub=state.superSubs.find(s=>s.submittedBy===btn.dataset.username);
+      if(sub)setState({superSelected:sub,superSection:1});
+    });
+  });
 }
-window.selAbcd=function(el,name){
-  document.querySelectorAll(`.abcd-opt[data-name="${name}"]`).forEach(x=>x.classList.remove('sel'));
-  el.classList.add('sel');
-};
-window.updChk=function(prefix,tot,badgeId){
-  let cnt=0;for(let i=0;i<tot;i++){const cb=document.getElementById(`${prefix}_${i}`);if(cb&&cb.checked)cnt++;}
-  const b=document.getElementById(badgeId);
-  if(!b)return;
-  const pct=Math.round(cnt/tot*100);
-  b.textContent=`${cnt}/${tot} (${pct}%)`;
-  b.className=`chk-count ${pct>=91?'b-met':pct>=51?'b-partial':'b-low'}`;
-};
+
+render();
 </script>
-</body>
-</html>
