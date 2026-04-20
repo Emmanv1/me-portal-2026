@@ -218,8 +218,8 @@ tr:hover td{background:#f5f8fc}
 // ================================================================
 // CONFIG
 // ================================================================
-const SB_URL = 'https://nociqkvsyvpjybecekcj.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vY2lxa3ZzeXZwanliZWNla2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MjI5NTcsImV4cCI6MjA5MjA5ODk1N30.edZRGoGhY9oiSKqUXxczG04gOsk7lXss1Ul_FGoaUTA';
+const SB_URL = 'YOUR_SUPABASE_URL';
+const SB_KEY = 'YOUR_SUPABASE_ANON_KEY';
 const IS_SB  = ()=> SB_URL !== 'YOUR_SUPABASE_URL' && SB_KEY !== 'YOUR_SUPABASE_ANON_KEY';
 
 // ================================================================
@@ -594,7 +594,7 @@ function renderForm(selectedDay){
     </div>
 
     <div id="formMsg" class="msg"></div>
-    ${isSubmitted?`<div class="msg msg-success show" style="margin-bottom:10px">🔒 <b>${FORM_DAY}</b> observation has been <b>submitted and locked</b>. You may still view and print it below.</div>`:''}
+    ${isSubmitted?`<div class="msg msg-success show" style="margin-bottom:10px">🔒 <b>${FORM_DAY}</b> observation has been <b>submitted and locked</b>. You may still view and print it, or unlock to make corrections.</div>`:''}
 
     <div class="stabs" id="stabs">
       ${SECTIONS.map(s=>`<button class="stab${s.k===CS?' active':''}" onclick="switchSec('${s.k}')">${s.lbl}</button>`).join('')}
@@ -603,6 +603,7 @@ function renderForm(selectedDay){
     <div class="btn-row" id="formBtnRow">
       ${isSubmitted?`
         <span class="btn" style="background:#2e7d32;color:#fff;cursor:default">✅ Submitted</span>
+        <button class="btn" style="background:#e65100;color:#fff" onclick="undoSubmission()" title="Unlock this submission to make corrections">🔓 Undo Submission</button>
         <button class="btn btn-pdf" onclick="printMyReport()">🖨️ Print / Save PDF</button>
       `:`
         <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
@@ -1029,11 +1030,12 @@ async function submitForm(){
     await saveObs(payload);
     showMsg(msg,'✅ '+FORM_DAY+' observation submitted successfully! The form is now locked.','success');
 
-    // Update button row: hide Save Draft & Load Draft, show Submitted badge
+    // Update button row: hide Save Draft & Load Draft, show Submitted + Unlock badges
     const btnRow=document.getElementById('formBtnRow');
     if(btnRow){
       btnRow.innerHTML=`
         <span class="btn" style="background:#2e7d32;color:#fff;cursor:default">✅ Submitted</span>
+        <button class="btn" style="background:#e65100;color:#fff" onclick="undoSubmission()" title="Unlock to make corrections">🔓 Undo Submission</button>
         <button class="btn btn-pdf" onclick="printMyReport()">🖨️ Print / Save PDF</button>
       `;
     }
@@ -1054,8 +1056,42 @@ async function submitForm(){
     });
   }catch(er){showMsg(msg,'❌ Submit error: '+er.message,'error');}
 }
-async function loadDraft(){
+
+// ================================================================
+// UNDO SUBMISSION — revert submitted → draft so officer can edit
+// ================================================================
+async function undoSubmission(){
+  if(!confirm('🔓 Undo the submission for '+FORM_DAY+'?\n\nThis reverts it to Draft so you can make corrections. The superadmin will see it as unsubmitted.')) return;
   const msg=document.getElementById('formMsg');
+  try{
+    const payload=mkPayload('draft');
+    await saveObs(payload);
+    showMsg(msg,'🔓 Submission undone. '+FORM_DAY+' is now a Draft — edit and re-submit when ready.','info');
+    // Restore edit buttons
+    const btnRow=document.getElementById('formBtnRow');
+    if(btnRow){
+      btnRow.innerHTML=`
+        <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
+        <button class="btn btn-success" onclick="submitForm()">📤 Submit</button>
+        <button class="btn" style="background:#607d8b;color:#fff" onclick="loadDraft()">🔄 Load Draft</button>
+        <button class="btn btn-pdf" onclick="printMyReport()">🖨️ Print / Save PDF</button>
+      `;
+    }
+    // Unlock all form fields
+    document.querySelectorAll('#secBody input:not([id="m_day"]):not([id="m_class"]):not([id="m_officer"]), #secBody select, #secBody textarea').forEach(el=>{el.disabled=false;});
+    document.querySelectorAll('#secBody .abcd-opt').forEach(el=>{el.style.pointerEvents='';el.style.opacity='';});
+    // Update day selector badge
+    document.querySelectorAll('.stab[onclick^="renderForm"]').forEach(btn=>{
+      if(btn.textContent.includes(FORM_DAY)) btn.innerHTML='📝 '+FORM_DAY;
+    });
+    // Remove lock message
+    document.querySelectorAll('#formMsg ~ .msg-success, .msg.show').forEach(el=>{
+      if(el.textContent.includes('submitted and locked')) el.className='msg';
+    });
+  }catch(er){showMsg(msg,'❌ Undo error: '+er.message,'error');}
+}
+
+async function loadDraft(){
   const day=FORM_DAY||FD?.meta?.training_day||'Day 1';
   try{
     let found=null;
@@ -1878,9 +1914,22 @@ async function loadAllSubs(){
   let subs=[];
   if(IS_SB()){
     try{subs=await sbGet('me_obs','?order=class_name.asc,training_day.asc')||[];}
-    catch(er){console.warn('DB load failed:',er);}
+    catch(er){console.warn('DB load failed, falling back to localStorage:',er);}
   }
-  if(!subs.length) subs=lsLoad();
+  // Always merge localStorage — even with Supabase, local data is more current
+  // (Supabase may have slight propagation delay, localStorage is instant)
+  const local=lsLoad();
+  local.forEach(loc=>{
+    const idx=subs.findIndex(s=>s.username===loc.username&&s.training_day===loc.training_day);
+    if(idx>=0){
+      // Use whichever is more recent
+      const sbDate=new Date(subs[idx].updated_at||0);
+      const lcDate=new Date(loc.updated_at||0);
+      if(lcDate>sbDate) subs[idx]=loc;
+    } else {
+      subs.push(loc);
+    }
+  });
   // Merge with imported subs (superadmin import feature)
   const imported=lsLoadImported();
   imported.forEach(imp=>{
@@ -1967,7 +2016,7 @@ window.addEventListener('storage',function(e){
       // Show toast notification
       const toast=document.createElement('div');
       toast.style.cssText='position:fixed;top:16px;right:16px;background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s';
-      toast.innerHTML='🔄 New data received — refreshing dashboard…';
+      toast.innerHTML='🔄 New data received — refreshing…';
       document.body.appendChild(toast);
       // Refresh current admin view
       const active=document.querySelector('.nav-item.active');
@@ -1978,6 +2027,22 @@ window.addEventListener('storage',function(e){
       }
       setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),400);},3000);
     },600);
+  } else if(CU.role==='me_officer'){
+    // Update day selector badges if M&E officer is on the form page
+    clearTimeout(_adminRefreshTimer);
+    _adminRefreshTimer=setTimeout(()=>{
+      const allMyRecs=lsLoad().filter(r=>r.username===CU.username);
+      const dayStatus={};
+      allMyRecs.forEach(r=>{dayStatus[r.training_day]=r.status;});
+      document.querySelectorAll('.stab[onclick^="renderForm"]').forEach(btn=>{
+        const match=btn.textContent.trim().match(/(Day \d)/);
+        if(match){
+          const d=match[1];
+          const st=dayStatus[d];
+          btn.innerHTML=(st==='submitted'?'✅ ':st==='draft'?'📝 ':'○ ')+d;
+        }
+      });
+    },300);
   }
 });
 
@@ -1988,7 +2053,10 @@ function startAdminPoll(){
   _pollTimer=setInterval(()=>{
     if(!CU||CU.role!=='superadmin') return;
     const active=document.querySelector('.nav-item.active');
-    if(active&&active.id==='nav_dash') renderDashboard();
+    if(!active) return;
+    if(active.id==='nav_dash') renderDashboard();
+    else if(active.id==='nav_consol') renderConsolidated();
+    else if(active.id==='nav_subs') renderAllSubs();
   },30000);
 }
 function stopAdminPoll(){ clearInterval(_pollTimer); }
