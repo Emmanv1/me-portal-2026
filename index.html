@@ -651,38 +651,47 @@ function _lockFormFields(){
 
 function renderForm(selectedDay){
   if(!FD) initFD();
-
-  // Before switching days, save whatever is currently in the DOM into FD
-  // so the user doesn't lose edits they made on the current section.
   if(selectedDay && selectedDay !== FORM_DAY){
     collectSec(CS);
-    // Auto-save the current day as draft before leaving it
     const curPayload = mkPayload('draft');
     saveObs(curPayload).catch(()=>{});
   }
-
-  // Use selectedDay arg or preserve FORM_DAY
   if(selectedDay) FORM_DAY = selectedDay;
   FD.meta.training_day = FORM_DAY;
+  const mc=document.getElementById('mainContent');
+  mc.innerHTML='<div style="padding:20px;color:var(--muted)">⏳ Loading '+FORM_DAY+' data…</div>';
+  _loadFormData(FORM_DAY).then(({dayStatus,isSubmitted})=>{
+    _renderFormHTML(dayStatus,isSubmitted);
+  });
+}
 
-  // Build day status map from localStorage
-  const allMyRecs = lsLoad().filter(r=>r.username===CU.username);
-  const dayStatus = {};
-  allMyRecs.forEach(r=>{ dayStatus[r.training_day]=r.status; });
-
-  // Check if this day is already submitted
-  const existing = allMyRecs.find(r=>r.training_day===FORM_DAY);
-  const isSubmitted = existing && existing.status==='submitted';
-
-  // Auto-load existing data (draft or submitted) for this day
-  if(existing && existing.data){
-    FD = JSON.parse(JSON.stringify(existing.data));
-    FD.meta.training_day = FORM_DAY;
-  } else {
-    initFD();
-    FD.meta.training_day = FORM_DAY;
+async function _loadFormData(day){
+  if(IS_SB()){
+    try{
+      const sbRecs=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&order=training_day.asc');
+      if(sbRecs&&sbRecs.length){
+        const local=lsLoad();
+        sbRecs.forEach(sr=>{
+          const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
+          const sbDate=new Date(sr.updated_at||0);
+          if(idx>=0){const lcDate=new Date(local[idx].updated_at||0);if(sbDate>lcDate)local[idx]=sr;}
+          else local.push(sr);
+        });
+        lsSave(local);
+      }
+    }catch(e){console.warn('Supabase fetch failed:',e.message);}
   }
+  const allMyRecs=lsLoad().filter(r=>r.username===CU.username);
+  const dayStatus={};
+  allMyRecs.forEach(r=>{dayStatus[r.training_day]=r.status;});
+  const existing=allMyRecs.find(r=>r.training_day===day);
+  const isSubmitted=existing&&existing.status==='submitted';
+  if(existing&&existing.data){FD=JSON.parse(JSON.stringify(existing.data));FD.meta.training_day=day;}
+  else{initFD();FD.meta.training_day=day;}
+  return{dayStatus,isSubmitted};
+}
 
+function _renderFormHTML(dayStatus,isSubmitted){
   const mc=document.getElementById('mainContent');
   mc.innerHTML=`
     <div class="page-title">📝 M&amp;E &amp; Process Observation Form</div>
@@ -1325,8 +1334,38 @@ async function saveObs(payload){
 // Uses window storage event (universal) + BroadcastChannel (where supported).
 (function initSyncListener(){
   function handlePing(d){
-    if(!d||d.type!=='obs_saved') return;
-    if(!CU||CU.role!=='superadmin') return;
+    if(!d) return;
+    if(!CU) return;
+
+    // Handle deletion ping — for M&E officers whose draft was deleted
+    if(d.type==='obs_deleted'){
+      if(CU.role==='me_officer'&&CU.username===d.username){
+        // Remove from localStorage
+        const local=lsLoad().filter(r=>!(r.username===d.username&&r.training_day===d.training_day));
+        lsSave(local);
+        // If currently viewing that day, reset form
+        if(FORM_DAY===d.training_day){
+          initFD();
+          FD.meta.training_day=d.training_day;
+          renderForm(d.training_day);
+          // Show notification
+          setTimeout(()=>{
+            const msg=document.getElementById('formMsg');
+            if(msg){msg.textContent='⚠️ Your draft for '+d.training_day+' was deleted by the administrator. Form has been reset.';msg.className='msg msg-error show';}
+          },300);
+        }
+      }
+      // Also refresh superadmin if open
+      if(CU.role==='superadmin'){
+        const active=document.querySelector('.nav-item.active');
+        if(active&&active.id==='nav_dash') renderDashboard();
+      }
+      return;
+    }
+
+    // Handle save/submit ping — superadmin only
+    if(d.type!=='obs_saved') return;
+    if(CU.role!=='superadmin') return;
     const toast=document.createElement('div');
     const icon=d.status==='submitted'?'📤':'💾';
     toast.style.cssText='position:fixed;top:16px;right:16px;background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s;max-width:90vw';
@@ -1602,9 +1641,28 @@ window.exportSub=function(sub){
 // ================================================================
 // ADMIN: DASHBOARD
 // ================================================================
+const DAYS_ALL=['Day 1','Day 2','Day 3','Day 4','Day 5'];
+
+// Check if a record has all 10 sections meaningfully filled
+function isSectionFilled(fd){
+  if(!fd) return 0;
+  let filled=0;
+  if(fd.meta?.obs_date) filled++;
+  if(fd.incidents!==undefined) filled++; // always counts (can be empty)
+  if(fd.part?.r1) filled++;
+  if(fd.design?.col) filled++;
+  if(fd.rps?.r1) filled++;
+  if(fd.lrms?.r1) filled++;
+  if(fd.pm?.col) filled++;
+  if(fd.eval?.col) filled++;
+  if(fd.envi?.col) filled++;
+  if(fd.summary?.findings?.part||fd.summary?.recommendations?.part) filled++;
+  return filled; // out of 10
+}
+
 async function renderDashboard(){
   const mc=document.getElementById('mainContent');
-  mc.innerHTML=`<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>`;
+  mc.innerHTML='<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>';
   const allSubs=await loadAllSubs();
   const submitted=allSubs.filter(s=>s.status==='submitted');
   const drafted=allSubs.filter(s=>s.status==='draft');
@@ -1614,65 +1672,103 @@ async function renderDashboard(){
   const sbBadge=IS_SB()
     ? (sbStat?.ok
         ? `<span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">☁️ Supabase: Connected</span>`
-        : `<span style="background:#ffebee;color:#c62828;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700" title="${sbStat?.error||''}">⚠️ Supabase: Error (local only)</span>`)
+        : `<span style="background:#ffebee;color:#c62828;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700" title="${sbStat?.error||''}" >⚠️ Supabase: Error</span>`)
     : `<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">📵 No Cloud Sync</span>`;
-  mc.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+
+  mc.innerHTML=`
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
     <div class="page-title" style="margin-bottom:0">📊 Admin Dashboard</div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--muted)">Last refreshed: ${now}</span>
       ${sbBadge}
       <button class="btn btn-primary btn-sm" onclick="renderDashboard()">🔄 Refresh Now</button>
     </div>
   </div>
-    <div class="page-sub" style="margin-bottom:14px">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
-    ${IS_SB()&&window._sbStatus&&!window._sbStatus?.ok?`<div class="msg msg-error show" style="margin-bottom:14px">
-      🚨 <b>Supabase is configured but NOT working.</b> This is why other devices cannot see each other's data.<br>
-      <b>Error:</b> ${window._sbStatus?.error||'Unknown'}<br>
-      <b>Fix:</b> In your Supabase dashboard → <b>Table Editor → me_observations → RLS Policies</b>, make sure you have:<br>
-      &nbsp;&nbsp;✅ <b>SELECT</b> for <code>anon</code> role (all rows) &nbsp;
-      &nbsp;&nbsp;✅ <b>INSERT</b> for <code>anon</code> role &nbsp;
-      &nbsp;&nbsp;✅ <b>UPDATE</b> for <code>anon</code> role<br>
-      Or, temporarily disable RLS on the table while testing: <b>Authentication → Policies → Disable RLS</b>.
-    </div>`:''}
-    ${!IS_SB()?`<div class="msg msg-info show" style="margin-bottom:14px">
-      ⚠️ <b>Supabase not connected.</b> Data is saved in <b>this browser only</b>. For multi-device real-time sync, configure Supabase.<br>
-      <b>Same device/browser:</b> Dashboard auto-refreshes when M&E officers submit in other tabs. &nbsp;
-      <b>Different devices:</b> M&E Officers must export JSON files and you import them below.
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <label class="btn btn-success btn-sm" style="cursor:pointer">
-          ⬆️ Import M&E JSON Files
-          <input type="file" accept=".json" multiple style="display:none" onchange="importSubmissions(this.files)">
-        </label>
-        <button class="btn btn-sm" style="background:#37474f;color:#fff" onclick="clearImported()">🗑 Clear Imported</button>
-        <span style="font-size:11px;color:var(--muted)">Imported: ${lsLoadImported().length} record(s)</span>
-      </div>
-    </div>`:''}
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-lbl">M&amp;E Officers</div><div class="kpi-val">${officers.length}</div><div class="kpi-sub">12 classes</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Submitted</div><div class="kpi-val" style="color:var(--success)">${submitted.length}</div><div class="kpi-sub">${drafted.length} in-progress drafts</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Classes Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.class_name)).size}</div><div class="kpi-sub">of 12</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Days Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.training_day)).size}</div><div class="kpi-sub">of 5 days</div></div>
+  <div class="page-sub" style="margin-bottom:14px">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-lbl">M&amp;E Officers</div><div class="kpi-val">${officers.length}</div><div class="kpi-sub">12 classes</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Submitted</div><div class="kpi-val" style="color:var(--success)">${submitted.length}</div><div class="kpi-sub">${drafted.length} in-progress drafts</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Classes Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.class_name)).size}</div><div class="kpi-sub">of 12</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Days Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.training_day)).size}</div><div class="kpi-sub">of 5 days</div></div>
+  </div>
+
+  <div class="card">
+    <h3>📋 Class-by-Class Progress &amp; Status</h3>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Progress = sections filled out (10 sections per day). Click a day cell to view/delete that record.</p>
+    <div style="overflow-x:auto">
+    <table>
+      <tr>
+        <th>Class</th>
+        <th>M&amp;E Officer</th>
+        ${DAYS_ALL.map(d=>`<th style="text-align:center;min-width:110px">${d}</th>`).join('')}
+        <th style="text-align:center">Overall Progress</th>
+      </tr>
+      ${officers.map(u=>{
+        const classRecs=allSubs.filter(s=>s.class_name===u.class_assigned);
+        let totalSections=0;
+        const dayCells=DAYS_ALL.map(d=>{
+          const rec=classRecs.find(r=>r.training_day===d);
+          if(!rec) return `<td style="text-align:center"><span style="color:#ccc;font-size:12px">—</span></td>`;
+          const filled=isSectionFilled(rec.data);
+          totalSections+=filled;
+          const pct=Math.round(filled/10*100);
+          const isSubmitted=rec.status==='submitted';
+          const barColor=isSubmitted?'#2e7d32':pct>=80?'#1565c0':pct>=40?'#f57f17':'#c62828';
+          const statusIcon=isSubmitted?'✅':'📝';
+          return `<td style="text-align:center;padding:6px 8px">
+            <div style="font-size:11px;font-weight:700;color:${barColor};margin-bottom:3px">${statusIcon} ${pct}%</div>
+            <div style="background:#e0e0e0;border-radius:4px;height:6px;width:100%;overflow:hidden">
+              <div style="background:${barColor};height:6px;width:${pct}%;border-radius:4px;transition:.3s"></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${filled}/10 sections</div>
+            ${!isSubmitted?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 7px;margin-top:4px" onclick="adminDeleteDraft('${u.class_assigned}','${d}','${rec.username}')">🗑 Delete</button>`:''}
+          </td>`;
+        }).join('');
+        const totalPct=Math.round(totalSections/(DAYS_ALL.length*10)*100);
+        const submittedCount=DAYS_ALL.filter(d=>classRecs.find(r=>r.training_day===d&&r.status==='submitted')).length;
+        const overallColor=submittedCount===5?'#2e7d32':submittedCount>0?'#1565c0':'#6b7a8d';
+        return`<tr>
+          <td><b>${u.class_assigned}</b></td>
+          <td style="font-size:12px">${u.name}</td>
+          ${dayCells}
+          <td style="text-align:center;padding:8px">
+            <div style="font-size:13px;font-weight:800;color:${overallColor}">${submittedCount}/5 submitted</div>
+            <div style="background:#e0e0e0;border-radius:6px;height:8px;width:100%;overflow:hidden;margin-top:4px">
+              <div style="background:${overallColor};height:8px;width:${totalPct}%;border-radius:6px"></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${totalPct}% overall</div>
+          </td>
+        </tr>`;
+      }).join('')}
+    </table>
     </div>
-    <div class="card"><h3>Class-by-Class Status</h3>
-      <table>
-        <tr><th>Class</th><th>M&amp;E Officer</th><th>Submitted Reports</th><th>Days Covered</th><th>Avg. Overall Rating</th><th>Action</th></tr>
-        ${officers.map(u=>{
-          const cs=submitted.filter(s=>s.class_name===u.class_assigned);
-          const days=[...new Set(cs.map(s=>s.training_day))].join(', ')||'—';
-          const ratings=cs.map(s=>computeRatings(s.data).overall).filter(x=>x!=null);
-          const avgR=ratings.length?ratings.reduce((a,b)=>a+b,0)/ratings.length:null;
-          return`<tr>
-            <td><b>${u.class_assigned}</b></td>
-            <td>${u.name}</td>
-            <td><span class="badge ${cs.length?'b-met':'b-none'}">${cs.length} report${cs.length!==1?'s':''}</span></td>
-            <td style="font-size:12px">${days}</td>
-            <td><span class="badge ${badgeClass(avgR)}">${avgR!=null?avgR.toFixed(2):'—'}</span></td>
-            <td><button class="btn btn-primary btn-sm" onclick="viewClassDetail('${u.class_assigned}')">👁 View</button></td>
-          </tr>`;
-        }).join('')}
-      </table>
-    </div>`;
+  </div>`;
 }
+
+window.adminDeleteDraft=async function(className,trainingDay,username){
+  if(!confirm(`🗑 DELETE the draft for ${className} — ${trainingDay}?\n\nThis will permanently delete the data. The M&E officer will see a blank form when they log in next.`)) return;
+  try{
+    if(IS_SB()){
+      await sbDelete('me_observations',`?username=eq.${encodeURIComponent(username)}&training_day=eq.${encodeURIComponent(trainingDay)}`);
+    }
+    // Also remove from localStorage
+    const local=lsLoad().filter(r=>!(r.username===username&&r.training_day===trainingDay));
+    lsSave(local);
+    // Notify any open officer tabs via ping
+    try{
+      const ping={type:'obs_deleted',username,training_day:trainingDay,class_name:className,ts:new Date().toISOString(),_r:Math.random()};
+      localStorage.setItem('me_portal_ping',JSON.stringify(ping));
+      if(typeof BroadcastChannel!=='undefined'){
+        const bc=new BroadcastChannel('me_portal_sync');bc.postMessage(ping);bc.close();
+      }
+    }catch(e){}
+    alert(`✅ Deleted. ${className} — ${trainingDay} has been cleared.`);
+    renderDashboard();
+  }catch(e){
+    alert('❌ Delete failed: '+e.message);
+  }
+};
 
 // ================================================================
 // ADMIN: CONSOLIDATED REPORT
