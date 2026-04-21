@@ -1763,8 +1763,14 @@ window.adminDeleteDraft=async function(className,trainingDay,username){
         const bc=new BroadcastChannel('me_portal_sync');bc.postMessage(ping);bc.close();
       }
     }catch(e){}
-    alert(`✅ Deleted. ${className} — ${trainingDay} has been cleared.`);
-    renderDashboard();
+    // Immediately re-render dashboard WITHOUT alert so refresh happens first
+    await renderDashboard();
+    // Show subtle success toast instead of blocking alert
+    const t=document.createElement('div');
+    t.style.cssText='position:fixed;top:16px;right:16px;background:#2e7d32;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s';
+    t.textContent='🗑 Deleted: '+className+' — '+trainingDay;
+    document.body.appendChild(t);
+    setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3000);
   }catch(e){
     alert('❌ Delete failed: '+e.message);
   }
@@ -1825,7 +1831,7 @@ async function renderConsolidated(){
         </tr>`).join('')}
       </table>
     </div>
-    <div class="card"><h3>Consolidated Ratings per Class (All Days)</h3>
+    <div class="card"><h3>📊 Consolidated Ratings per Class — Overall (All Days Combined)</h3>
       <div style="overflow-x:auto"><table class="cons-table">
         <tr>
           <th>Class</th><th>Officer</th><th>Reports</th>
@@ -1850,6 +1856,60 @@ async function renderConsolidated(){
         </tr>
       </table></div>
     </div>
+
+    ${DAYS_ALL.map(day=>{
+      const daySubs=submitted.filter(s=>s.training_day===day);
+      // Per-class ratings for this day
+      const dayClassData={};
+      officers.forEach(u=>{
+        const rec=daySubs.find(s=>s.class_name===u.class_assigned);
+        if(rec){
+          const R=computeRatings(rec.data);
+          dayClassData[u.class_assigned]={ratings:R,obs_date:rec.obs_date};
+        }
+      });
+      // NCR average for this day
+      const dayRegAvg={};
+      CATS.forEach(c=>{
+        const vals=Object.values(dayClassData).map(d=>d.ratings[c.k]).filter(x=>x!=null);
+        dayRegAvg[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      });
+      const dayOvals=Object.values(dayRegAvg).filter(x=>x!=null);
+      dayRegAvg.overall=dayOvals.length?dayOvals.reduce((a,b)=>a+b,0)/dayOvals.length:null;
+      const submittedCount=daySubs.length;
+      return`<div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <h3>📅 ${day} — Consolidated Ratings per Class</h3>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--muted)">${submittedCount} of 12 classes submitted</span>
+            ${dayRegAvg.overall!=null?`<span class="badge ${badgeClass(dayRegAvg.overall)}" style="font-size:13px;padding:4px 14px">NCR Avg: ${dayRegAvg.overall.toFixed(2)}</span>`:'<span style="font-size:12px;color:var(--muted)">No submissions yet</span>'}
+          </div>
+        </div>
+        ${submittedCount===0?`<p style="color:var(--muted);font-size:13px;padding:8px 0">No submitted reports for ${day} yet.</p>`:`
+        <div style="overflow-x:auto"><table class="cons-table">
+          <tr>
+            <th>Class</th><th>Date</th>
+            ${CATS.map(c=>`<th style="min-width:65px">${c.lbl}</th>`).join('')}
+            <th>Overall</th>
+          </tr>
+          ${officers.map(u=>{
+            const d=dayClassData[u.class_assigned];
+            if(!d) return`<tr><td><b>${u.class_assigned}</b></td><td style="color:var(--muted);font-size:11px">—</td>${CATS.map(()=>'<td style="text-align:center"><span class="badge b-none">—</span></td>').join('')}<td style="text-align:center"><span class="badge b-none">—</span></td></tr>`;
+            return`<tr>
+              <td><b>${u.class_assigned}</b></td>
+              <td style="font-size:11px">${d.obs_date||'—'}</td>
+              ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(d.ratings[c.k])}">${d.ratings[c.k]!=null?d.ratings[c.k].toFixed(2):'—'}</span></td>`).join('')}
+              <td style="text-align:center"><span class="badge ${badgeClass(d.ratings.overall)}">${d.ratings.overall!=null?d.ratings.overall.toFixed(2):'—'}</span></td>
+            </tr>`;
+          }).join('')}
+          <tr style="background:#f0f4f8;font-weight:700">
+            <td colspan="2"><b>NCR AVERAGE — ${day}</b></td>
+            ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(dayRegAvg[c.k])}">${dayRegAvg[c.k]!=null?dayRegAvg[c.k].toFixed(2):'—'}</span></td>`).join('')}
+            <td style="text-align:center"><span class="badge ${badgeClass(dayRegAvg.overall)}">${dayRegAvg.overall!=null?dayRegAvg.overall.toFixed(2):'—'}</span></td>
+          </tr>
+        </table></div>`}
+      </div>`;
+    }).join('')}
     <div class="card" id="consFindings"><h3>Consolidated Findings &amp; Recommendations per Category</h3>
       ${CATS.map(c=>{
         const catFindings=submitted.filter(s=>s.data?.summary?.findings?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.findings[c.k]}));
