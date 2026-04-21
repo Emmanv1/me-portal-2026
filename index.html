@@ -1319,6 +1319,17 @@ async function saveObs(payload){
   // ── Step 3: Save to Supabase if configured (multi-device, real-time sync) ──
   if(IS_SB()){
     try{
+      // GUARD: Never overwrite a submitted record in Supabase with a draft
+      // Check current Supabase status before upserting
+      if(payload.status==='draft'){
+        try{
+          const existing=await sbGet('me_observations','?username=eq.'+encodeURIComponent(payload.username)+'&training_day=eq.'+encodeURIComponent(payload.training_day)+'&select=status');
+          if(existing&&existing.length&&existing[0].status==='submitted'){
+            console.log('Supabase guard: blocking draft upsert — record already submitted in Supabase');
+            return; // hard stop — never downgrade submitted to draft in Supabase
+          }
+        }catch(e){}
+      }
       // Use upsert — the unique(username, training_day) constraint handles insert vs update
       const sbPayload={
         username: payload.username,
@@ -1664,16 +1675,26 @@ const DAYS_ALL=['Day 1','Day 2','Day 3','Day 4','Day 5'];
 function isSectionFilled(fd){
   if(!fd) return 0;
   let filled=0;
+  // Section 1: Profile — has obs_date filled
   if(fd.meta?.obs_date) filled++;
-  if(fd.incidents!==undefined) filled++; // always counts (can be empty)
+  // Section 2: Incidents — always counts (can be legitimately empty)
+  if(fd.incidents!==undefined) filled++;
+  // Section 3: Participants — has at least one rating
   if(fd.part?.r1) filled++;
+  // Section 4: Program Design — has overall rating
   if(fd.design?.col) filled++;
+  // Section 5: Resource Persons — has at least one rating
   if(fd.rps?.r1) filled++;
+  // Section 6: LRMs — has at least one rating
   if(fd.lrms?.r1) filled++;
+  // Section 7: Program Management — has overall rating
   if(fd.pm?.col) filled++;
+  // Section 8: Evaluation Scheme — has overall rating
   if(fd.eval?.col) filled++;
+  // Section 9: Environment — has overall rating
   if(fd.envi?.col) filled++;
-  if(fd.summary?.findings?.part||fd.summary?.recommendations?.part) filled++;
+  // Section 10: Summary — always counts (findings/recommendations are optional)
+  if(fd.summary!==undefined) filled++;
   return filled; // out of 10
 }
 
@@ -2488,9 +2509,21 @@ function startOfficerAutosave(){
   _autosaveTimer=setInterval(async ()=>{
     if(!CU||CU.role!=='me_officer') return;
     if(!FD||!FORM_DAY) return;
-    // Don't autosave if the current day is already submitted
+    // Check BOTH localStorage AND FD status — never autosave if submitted
+    // This prevents overwriting a submitted record from another device/tab
     const recs=lsLoad().filter(r=>r.username===CU.username&&r.training_day===FORM_DAY);
     if(recs.length&&recs[0].status==='submitted') return;
+    // Also check Supabase directly before autosaving — critical for multi-device protection
+    if(IS_SB()){
+      try{
+        const sbCheck=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&training_day=eq.'+encodeURIComponent(FORM_DAY)+'&select=status');
+        if(sbCheck&&sbCheck.length&&sbCheck[0].status==='submitted'){
+          // Supabase says submitted — update localStorage and stop autosaving this day
+          if(recs.length){recs[0].status='submitted';const all=lsLoad();const idx=all.findIndex(r=>r.username===CU.username&&r.training_day===FORM_DAY);if(idx>=0){all[idx].status='submitted';lsSave(all);}}
+          return;
+        }
+      }catch(e){}
+    }
     try{
       collectSec(CS); // collect currently visible section
       const pl=mkPayload('draft');
