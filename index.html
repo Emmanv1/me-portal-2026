@@ -395,7 +395,27 @@ async function doLogin(){
   document.getElementById('sbName').textContent=CU.name;
   document.getElementById('sbRole').textContent=CU.role==='superadmin'?'⭐ Super Administrator':`📋 M&E Officer — ${CU.class_assigned}`;
   buildNav();
-  if(CU.role==='superadmin'){renderDashboard();startAdminPoll();}
+  if(CU.role==='superadmin'){
+    // Test Supabase connectivity immediately on login so admin knows if cloud sync is working
+    if(IS_SB()){
+      sbGet('me_observations','?limit=1').then(r=>{
+        window._sbStatus={ok:true,count:null,ts:new Date().toISOString()};
+      }).catch(er=>{
+        window._sbStatus={ok:false,error:er.message,ts:new Date().toISOString()};
+        // Show a one-time warning on login
+        setTimeout(()=>{
+          const w=document.createElement('div');
+          w.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#c62828;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:90vw;text-align:center;line-height:1.7';
+          w.innerHTML=`🚨 <b>Supabase unreachable!</b> Cross-device sync will NOT work.<br>
+            <span style="font-size:11px;opacity:.9">Fix: Enable RLS SELECT policy for anon on me_observations table in Supabase.</span><br>
+            <span style="font-size:10px;opacity:.75">Error: ${er.message}</span>`;
+          document.body.appendChild(w);
+          setTimeout(()=>w.remove(),10000);
+        },500);
+      });
+    }
+    renderDashboard();startAdminPoll();
+  }
   else{FORM_DAY='Day 1';renderForm();startOfficerAutosave();}
 }
 function doLogout(){
@@ -633,11 +653,11 @@ function renderForm(selectedDay){
   if(!FD) initFD();
   if(selectedDay && selectedDay !== FORM_DAY){
     collectSec(CS);
-    const curPayload=mkPayload('draft');
+    const curPayload = mkPayload('draft');
     saveObs(curPayload).catch(()=>{});
   }
-  if(selectedDay) FORM_DAY=selectedDay;
-  FD.meta.training_day=FORM_DAY;
+  if(selectedDay) FORM_DAY = selectedDay;
+  FD.meta.training_day = FORM_DAY;
   const mc=document.getElementById('mainContent');
   mc.innerHTML='<div style="padding:20px;color:var(--muted)">⏳ Loading '+FORM_DAY+' data…</div>';
   _loadFormData(FORM_DAY).then(({dayStatus,isSubmitted})=>{
@@ -646,16 +666,25 @@ function renderForm(selectedDay){
 }
 
 async function _loadFormData(day){
+  // ── Supabase is the ONE AND ONLY source of truth ──
+  // Always fetch fresh from Supabase — ensures same data on all devices
   let allMyRecs=[];
   if(IS_SB()){
     try{
-      allMyRecs=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&order=training_day.asc')||[];
-      lsSave(allMyRecs.concat(lsLoad().filter(r=>r.username!==CU.username)));
+      const sbRecs=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&order=training_day.asc')||[];
+      // Update localStorage as offline cache only
+      const local=lsLoad();
+      sbRecs.forEach(sr=>{
+        const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
+        if(idx>=0) local[idx]=sr; else local.push(sr);
+      });
+      lsSave(local);
+      allMyRecs=sbRecs;
     }catch(e){
       console.warn('Supabase fetch failed, using cache:',e.message);
       allMyRecs=lsLoad().filter(r=>r.username===CU.username);
     }
-  }else{
+  } else {
     allMyRecs=lsLoad().filter(r=>r.username===CU.username);
   }
   const dayStatus={};
@@ -1278,12 +1307,15 @@ async function saveObs(payload){
   // ── Step 3: Save to Supabase if configured (multi-device, real-time sync) ──
   if(IS_SB()){
     try{
-      // GUARD: Never overwrite submitted with draft in Supabase
-      // The DB trigger also protects this, but double-guard at code level
+      // GUARD: Never overwrite a submitted record in Supabase with a draft
+      // Check current Supabase status before upserting
       if(payload.status==='draft'){
         try{
-          const chk=await sbGet('me_observations','?username=eq.'+encodeURIComponent(payload.username)+'&training_day=eq.'+encodeURIComponent(payload.training_day)+'&select=status');
-          if(chk&&chk.length&&chk[0].status==='submitted') return;
+          const existing=await sbGet('me_observations','?username=eq.'+encodeURIComponent(payload.username)+'&training_day=eq.'+encodeURIComponent(payload.training_day)+'&select=status');
+          if(existing&&existing.length&&existing[0].status==='submitted'){
+            console.log('Supabase guard: blocking draft upsert — record already submitted in Supabase');
+            return; // hard stop — never downgrade submitted to draft in Supabase
+          }
         }catch(e){}
       }
       // Use upsert — the unique(username, training_day) constraint handles insert vs update
@@ -1318,8 +1350,38 @@ async function saveObs(payload){
 // Uses window storage event (universal) + BroadcastChannel (where supported).
 (function initSyncListener(){
   function handlePing(d){
-    if(!d||d.type!=='obs_saved') return;
-    if(!CU||CU.role!=='superadmin') return;
+    if(!d) return;
+    if(!CU) return;
+
+    // Handle deletion ping — for M&E officers whose draft was deleted
+    if(d.type==='obs_deleted'){
+      if(CU.role==='me_officer'&&CU.username===d.username){
+        // Remove from localStorage
+        const local=lsLoad().filter(r=>!(r.username===d.username&&r.training_day===d.training_day));
+        lsSave(local);
+        // If currently viewing that day, reset form
+        if(FORM_DAY===d.training_day){
+          initFD();
+          FD.meta.training_day=d.training_day;
+          renderForm(d.training_day);
+          // Show notification
+          setTimeout(()=>{
+            const msg=document.getElementById('formMsg');
+            if(msg){msg.textContent='⚠️ Your draft for '+d.training_day+' was deleted by the administrator. Form has been reset.';msg.className='msg msg-error show';}
+          },300);
+        }
+      }
+      // Also refresh superadmin if open
+      if(CU.role==='superadmin'){
+        const active=document.querySelector('.nav-item.active');
+        if(active&&active.id==='nav_dash') renderDashboard();
+      }
+      return;
+    }
+
+    // Handle save/submit ping — superadmin only
+    if(d.type!=='obs_saved') return;
+    if(CU.role!=='superadmin') return;
     const toast=document.createElement('div');
     const icon=d.status==='submitted'?'📤':'💾';
     toast.style.cssText='position:fixed;top:16px;right:16px;background:#1a3a5c;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s;max-width:90vw';
@@ -1595,37 +1657,83 @@ window.exportSub=function(sub){
 // ================================================================
 // ADMIN: DASHBOARD
 // ================================================================
+const DAYS_ALL=['Day 1','Day 2','Day 3','Day 4','Day 5'];
+
+// Check if a record has all 10 sections meaningfully filled
+function isSectionFilled(fd){
+  if(!fd) return 0;
+  let filled=0;
+  // Section 1: Profile — has obs_date filled
+  if(fd.meta?.obs_date) filled++;
+  // Section 2: Incidents — always counts (can be legitimately empty)
+  if(fd.incidents!==undefined) filled++;
+  // Section 3: Participants — has at least one rating
+  if(fd.part?.r1) filled++;
+  // Section 4: Program Design — has overall rating
+  if(fd.design?.col) filled++;
+  // Section 5: Resource Persons — has at least one rating
+  if(fd.rps?.r1) filled++;
+  // Section 6: LRMs — has at least one rating
+  if(fd.lrms?.r1) filled++;
+  // Section 7: Program Management — has overall rating
+  if(fd.pm?.col) filled++;
+  // Section 8: Evaluation Scheme — has overall rating
+  if(fd.eval?.col) filled++;
+  // Section 9: Environment — has overall rating
+  if(fd.envi?.col) filled++;
+  // Section 10: Summary — always counts (findings/recommendations are optional)
+  if(fd.summary!==undefined) filled++;
+  return filled; // out of 10
+}
+
 async function renderDashboard(){
   const mc=document.getElementById('mainContent');
   mc.innerHTML='<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>';
+
+  // Auto-sync: fetch all latest records from Supabase and update localStorage
+  // This ensures superadmin always sees Supabase as source of truth
+  // and clears any stale localStorage data on any device/browser
+  if(IS_SB()){
+    try{
+      const sbAll=await sbGet('me_observations','?order=class_name.asc,training_day.asc');
+      if(sbAll&&sbAll.length){
+        const local=lsLoad();
+        sbAll.forEach(sr=>{
+          const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
+          if(idx>=0){
+            const localRec=local[idx];
+            // Never let Supabase draft overwrite local submitted
+            if(localRec.status==='submitted'&&sr.status==='draft') return;
+            const sbDate=new Date(sr.updated_at||0);
+            const lcDate=new Date(localRec.updated_at||0);
+            if(sbDate>=lcDate) local[idx]=sr;
+          } else {
+            local.push(sr);
+          }
+        });
+        // Also remove any local records that no longer exist in Supabase
+        // (e.g. deleted by superadmin) — but only drafts, never submitted
+        const sbKeys=new Set(sbAll.map(r=>r.username+'|'+r.training_day));
+        const cleaned=local.filter(r=>
+          r.status==='submitted' || // always keep submitted
+          sbKeys.has(r.username+'|'+r.training_day) // keep if exists in Supabase
+        );
+        lsSave(cleaned);
+      }
+    }catch(e){console.warn('Dashboard sync failed:',e.message);}
+  }
+
   const allSubs=await loadAllSubs();
   const submitted=allSubs.filter(s=>s.status==='submitted');
   const drafted=allSubs.filter(s=>s.status==='draft');
   const officers=ACCOUNTS.filter(a=>a.role==='me_officer');
   const now=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const sbOk=window._sbStatus?.ok;
+  const sbStat=window._sbStatus;
   const sbBadge=IS_SB()
-    ?(sbOk!==false?'<span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">☁️ Supabase: Connected</span>'
-      :'<span style="background:#ffebee;color:#c62828;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">⚠️ Supabase: Error</span>')
-    :'<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">📵 No Cloud Sync</span>';
-
-  const DAYS=['Day 1','Day 2','Day 3','Day 4','Day 5'];
-
-  function secFilled(fd){
-    if(!fd) return 0;
-    let n=0;
-    if(fd.meta?.obs_date) n++;
-    if(fd.incidents!==undefined) n++;
-    if(fd.part?.r1) n++;
-    if(fd.design?.col) n++;
-    if(fd.rps?.r1) n++;
-    if(fd.lrms?.r1) n++;
-    if(fd.pm?.col) n++;
-    if(fd.eval?.col) n++;
-    if(fd.envi?.col) n++;
-    if(fd.summary!==undefined) n++;
-    return n;
-  }
+    ? (sbStat?.ok
+        ? `<span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">☁️ Supabase: Connected</span>`
+        : `<span style="background:#ffebee;color:#c62828;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700" title="${sbStat?.error||''}" >⚠️ Supabase: Error</span>`)
+    : `<span style="background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">📵 No Cloud Sync</span>`;
 
   mc.innerHTML=`
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
@@ -1637,68 +1745,89 @@ async function renderDashboard(){
     </div>
   </div>
   <div class="page-sub" style="margin-bottom:14px">Training of Regional Trainers on the Revised Grade 6 Curriculum — DepEd NCR 2026</div>
+
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-lbl">M&amp;E Officers</div><div class="kpi-val">${officers.length}</div><div class="kpi-sub">12 classes</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Submitted</div><div class="kpi-val" style="color:var(--success)">${submitted.length}</div><div class="kpi-sub">${drafted.length} in-progress drafts</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Classes Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.class_name)).size}</div><div class="kpi-sub">of 12</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Days Covered</div><div class="kpi-val">${new Set(submitted.map(s=>s.training_day)).size}</div><div class="kpi-sub">of 5 days</div></div>
   </div>
+
   <div class="card">
     <h3>📋 Class-by-Class Progress &amp; Status</h3>
-    <div style="overflow-x:auto"><table>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Progress = sections filled out (10 sections per day). Click a day cell to view/delete that record.</p>
+    <div style="overflow-x:auto">
+    <table>
       <tr>
-        <th>Class</th><th>M&amp;E Officer</th>
-        ${DAYS.map(d=>'<th style="text-align:center;min-width:100px">'+d+'</th>').join('')}
-        <th style="text-align:center">Overall</th>
+        <th>Class</th>
+        <th>M&amp;E Officer</th>
+        ${DAYS_ALL.map(d=>`<th style="text-align:center;min-width:110px">${d}</th>`).join('')}
+        <th style="text-align:center">Overall Progress</th>
       </tr>
       ${officers.map(u=>{
-        const recs=allSubs.filter(s=>s.class_name===u.class_assigned);
-        let total=0;
-        const cells=DAYS.map(d=>{
-          const rec=recs.find(r=>r.training_day===d);
-          if(!rec) return '<td style="text-align:center"><span style="color:#ccc">—</span></td>';
-          const n=secFilled(rec.data); total+=n;
-          const pct=Math.round(n/10*100);
-          const isOk=rec.status==='submitted';
-          const col=isOk?'#2e7d32':pct>=80?'#1565c0':pct>=40?'#f57f17':'#c62828';
-          return '<td style="text-align:center;padding:6px 4px">'
-            +'<div style="font-size:11px;font-weight:700;color:'+col+'">'+(isOk?'✅':'📝')+' '+pct+'%</div>'
-            +'<div style="background:#e0e0e0;border-radius:3px;height:5px;margin:2px 0;overflow:hidden">'
-            +'<div style="background:'+col+';height:5px;width:'+pct+'%"></div></div>'
-            +'<div style="font-size:10px;color:var(--muted)">'+n+'/10</div>'
-            +(!isOk?'<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 6px;margin-top:3px" onclick="adminDeleteDraft(''+u.class_assigned+'',''+d+'',''+rec.username+'')">🗑</button>':'')
-            +'</td>';
+        const classRecs=allSubs.filter(s=>s.class_name===u.class_assigned);
+        let totalSections=0;
+        const dayCells=DAYS_ALL.map(d=>{
+          const rec=classRecs.find(r=>r.training_day===d);
+          if(!rec) return `<td style="text-align:center"><span style="color:#ccc;font-size:12px">—</span></td>`;
+          const filled=isSectionFilled(rec.data);
+          totalSections+=filled;
+          const pct=Math.round(filled/10*100);
+          const isSubmitted=rec.status==='submitted';
+          const barColor=isSubmitted?'#2e7d32':pct>=80?'#1565c0':pct>=40?'#f57f17':'#c62828';
+          const statusIcon=isSubmitted?'✅':'📝';
+          return `<td style="text-align:center;padding:6px 8px">
+            <div style="font-size:11px;font-weight:700;color:${barColor};margin-bottom:3px">${statusIcon} ${pct}%</div>
+            <div style="background:#e0e0e0;border-radius:4px;height:6px;width:100%;overflow:hidden">
+              <div style="background:${barColor};height:6px;width:${pct}%;border-radius:4px;transition:.3s"></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${filled}/10 sections</div>
+            ${!isSubmitted?`<button class="btn btn-danger btn-sm" style="font-size:10px;padding:2px 7px;margin-top:4px" onclick="adminDeleteDraft('${u.class_assigned}','${d}','${rec.username}')">🗑 Delete</button>`:''}
+          </td>`;
         }).join('');
-        const subCount=DAYS.filter(d=>recs.find(r=>r.training_day===d&&r.status==='submitted')).length;
-        const totPct=Math.round(total/(DAYS.length*10)*100);
-        const oc=subCount===5?'#2e7d32':subCount>0?'#1565c0':'#6b7a8d';
-        return '<tr><td><b>'+u.class_assigned+'</b></td><td style="font-size:12px">'+u.name+'</td>'
-          +cells
-          +'<td style="text-align:center;padding:6px 8px">'
-          +'<div style="font-size:12px;font-weight:800;color:'+oc+'">'+subCount+'/5 submitted</div>'
-          +'<div style="background:#e0e0e0;border-radius:4px;height:6px;margin-top:3px;overflow:hidden">'
-          +'<div style="background:'+oc+';height:6px;width:'+totPct+'%"></div></div>'
-          +'<div style="font-size:10px;color:var(--muted);margin-top:2px">'+totPct+'% overall</div>'
-          +'</td></tr>';
+        const totalPct=Math.round(totalSections/(DAYS_ALL.length*10)*100);
+        const submittedCount=DAYS_ALL.filter(d=>classRecs.find(r=>r.training_day===d&&r.status==='submitted')).length;
+        const overallColor=submittedCount===5?'#2e7d32':submittedCount>0?'#1565c0':'#6b7a8d';
+        return`<tr>
+          <td><b>${u.class_assigned}</b></td>
+          <td style="font-size:12px">${u.name}</td>
+          ${dayCells}
+          <td style="text-align:center;padding:8px">
+            <div style="font-size:13px;font-weight:800;color:${overallColor}">${submittedCount}/5 submitted</div>
+            <div style="background:#e0e0e0;border-radius:6px;height:8px;width:100%;overflow:hidden;margin-top:4px">
+              <div style="background:${overallColor};height:8px;width:${totalPct}%;border-radius:6px"></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${totalPct}% overall</div>
+          </td>
+        </tr>`;
       }).join('')}
-    </table></div>
+    </table>
+    </div>
   </div>`;
 }
 
 window.adminDeleteDraft=async function(className,trainingDay,username){
-  if(!confirm('🗑 DELETE the draft for '+className+' — '+trainingDay+'?\n\nThis will permanently delete the data.')) return;
+  if(!confirm(`🗑 DELETE the draft for ${className} — ${trainingDay}?\n\nThis will permanently delete the data. The M&E officer will see a blank form when they log in next.`)) return;
   try{
-    if(IS_SB()) await sbDelete('me_observations','?username=eq.'+encodeURIComponent(username)+'&training_day=eq.'+encodeURIComponent(trainingDay));
+    if(IS_SB()){
+      await sbDelete('me_observations',`?username=eq.${encodeURIComponent(username)}&training_day=eq.${encodeURIComponent(trainingDay)}`);
+    }
+    // Also remove from localStorage
     const local=lsLoad().filter(r=>!(r.username===username&&r.training_day===trainingDay));
     lsSave(local);
+    // Notify any open officer tabs via ping
     try{
       const ping={type:'obs_deleted',username,training_day:trainingDay,class_name:className,ts:new Date().toISOString(),_r:Math.random()};
       localStorage.setItem('me_portal_ping',JSON.stringify(ping));
-      if(typeof BroadcastChannel!=='undefined'){const bc=new BroadcastChannel('me_portal_sync');bc.postMessage(ping);bc.close();}
+      if(typeof BroadcastChannel!=='undefined'){
+        const bc=new BroadcastChannel('me_portal_sync');bc.postMessage(ping);bc.close();
+      }
     }catch(e){}
+    // Immediately re-render dashboard WITHOUT alert so refresh happens first
     await renderDashboard();
+    // Show subtle success toast instead of blocking alert
     const t=document.createElement('div');
-    t.style.cssText='position:fixed;top:16px;right:16px;background:#2e7d32;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;transition:opacity .4s';
+    t.style.cssText='position:fixed;top:16px;right:16px;background:#2e7d32;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .4s';
     t.textContent='🗑 Deleted: '+className+' — '+trainingDay;
     document.body.appendChild(t);
     setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3000);
@@ -1762,7 +1891,7 @@ async function renderConsolidated(){
         </tr>`).join('')}
       </table>
     </div>
-    <div class="card"><h3>Consolidated Ratings per Class (All Days)</h3>
+    <div class="card"><h3>📊 Consolidated Ratings per Class — Overall (All Days Combined)</h3>
       <div style="overflow-x:auto"><table class="cons-table">
         <tr>
           <th>Class</th><th>Officer</th><th>Reports</th>
@@ -1787,6 +1916,60 @@ async function renderConsolidated(){
         </tr>
       </table></div>
     </div>
+
+    ${DAYS_ALL.map(day=>{
+      const daySubs=submitted.filter(s=>s.training_day===day);
+      // Per-class ratings for this day
+      const dayClassData={};
+      officers.forEach(u=>{
+        const rec=daySubs.find(s=>s.class_name===u.class_assigned);
+        if(rec){
+          const R=computeRatings(rec.data);
+          dayClassData[u.class_assigned]={ratings:R,obs_date:rec.obs_date};
+        }
+      });
+      // NCR average for this day
+      const dayRegAvg={};
+      CATS.forEach(c=>{
+        const vals=Object.values(dayClassData).map(d=>d.ratings[c.k]).filter(x=>x!=null);
+        dayRegAvg[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      });
+      const dayOvals=Object.values(dayRegAvg).filter(x=>x!=null);
+      dayRegAvg.overall=dayOvals.length?dayOvals.reduce((a,b)=>a+b,0)/dayOvals.length:null;
+      const submittedCount=daySubs.length;
+      return`<div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <h3>📅 ${day} — Consolidated Ratings per Class</h3>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--muted)">${submittedCount} of 12 classes submitted</span>
+            ${dayRegAvg.overall!=null?`<span class="badge ${badgeClass(dayRegAvg.overall)}" style="font-size:13px;padding:4px 14px">NCR Avg: ${dayRegAvg.overall.toFixed(2)}</span>`:'<span style="font-size:12px;color:var(--muted)">No submissions yet</span>'}
+          </div>
+        </div>
+        ${submittedCount===0?`<p style="color:var(--muted);font-size:13px;padding:8px 0">No submitted reports for ${day} yet.</p>`:`
+        <div style="overflow-x:auto"><table class="cons-table">
+          <tr>
+            <th>Class</th><th>Date</th>
+            ${CATS.map(c=>`<th style="min-width:65px">${c.lbl}</th>`).join('')}
+            <th>Overall</th>
+          </tr>
+          ${officers.map(u=>{
+            const d=dayClassData[u.class_assigned];
+            if(!d) return`<tr><td><b>${u.class_assigned}</b></td><td style="color:var(--muted);font-size:11px">—</td>${CATS.map(()=>'<td style="text-align:center"><span class="badge b-none">—</span></td>').join('')}<td style="text-align:center"><span class="badge b-none">—</span></td></tr>`;
+            return`<tr>
+              <td><b>${u.class_assigned}</b></td>
+              <td style="font-size:11px">${d.obs_date||'—'}</td>
+              ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(d.ratings[c.k])}">${d.ratings[c.k]!=null?d.ratings[c.k].toFixed(2):'—'}</span></td>`).join('')}
+              <td style="text-align:center"><span class="badge ${badgeClass(d.ratings.overall)}">${d.ratings.overall!=null?d.ratings.overall.toFixed(2):'—'}</span></td>
+            </tr>`;
+          }).join('')}
+          <tr style="background:#f0f4f8;font-weight:700">
+            <td colspan="2"><b>NCR AVERAGE — ${day}</b></td>
+            ${CATS.map(c=>`<td style="text-align:center"><span class="badge ${badgeClass(dayRegAvg[c.k])}">${dayRegAvg[c.k]!=null?dayRegAvg[c.k].toFixed(2):'—'}</span></td>`).join('')}
+            <td style="text-align:center"><span class="badge ${badgeClass(dayRegAvg.overall)}">${dayRegAvg.overall!=null?dayRegAvg.overall.toFixed(2):'—'}</span></td>
+          </tr>
+        </table></div>`}
+      </div>`;
+    }).join('')}
     <div class="card" id="consFindings"><h3>Consolidated Findings &amp; Recommendations per Category</h3>
       ${CATS.map(c=>{
         const catFindings=submitted.filter(s=>s.data?.summary?.findings?.[c.k]).map(s=>({cls:s.class_name,day:s.training_day,txt:s.data.summary.findings[c.k]}));
@@ -1802,45 +1985,6 @@ async function renderConsolidated(){
         </div>`;
       }).join('')}
     </div>
-
-    ${['Day 1','Day 2','Day 3','Day 4','Day 5'].map(day=>{
-      const daySubs=submitted.filter(s=>s.training_day===day);
-      const dayClassData={};
-      officers.forEach(u=>{
-        const rec=daySubs.find(s=>s.class_name===u.class_assigned);
-        if(rec) dayClassData[u.class_assigned]={ratings:computeRatings(rec.data),obs_date:rec.obs_date};
-      });
-      const dayRegAvg={};
-      CATS.forEach(c=>{
-        const vals=Object.values(dayClassData).map(d=>d.ratings[c.k]).filter(x=>x!=null);
-        dayRegAvg[c.k]=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-      });
-      const dayOvals=Object.values(dayRegAvg).filter(x=>x!=null);
-      dayRegAvg.overall=dayOvals.length?dayOvals.reduce((a,b)=>a+b,0)/dayOvals.length:null;
-      return`<div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-          <h3>📅 ${day} — Ratings per Class</h3>
-          <div>
-            <span style="font-size:12px;color:var(--muted)">${daySubs.length}/12 submitted</span>
-            ${dayRegAvg.overall!=null?` &nbsp;<span class="badge ${badgeClass(dayRegAvg.overall)}">NCR Avg: ${dayRegAvg.overall.toFixed(2)}</span>`:''}
-          </div>
-        </div>
-        ${daySubs.length===0?'<p style="color:var(--muted);font-size:13px">No submissions yet for '+day+'.</p>':`
-        <div style="overflow-x:auto"><table class="cons-table">
-          <tr><th>Class</th><th>Date</th>${CATS.map(c=>'<th style="min-width:60px">'+c.lbl+'</th>').join('')}<th>Overall</th></tr>
-          ${officers.map(u=>{
-            const d=dayClassData[u.class_assigned];
-            if(!d) return '<tr><td><b>'+u.class_assigned+'</b></td><td style="color:var(--muted)">—</td>'+CATS.map(()=>'<td style="text-align:center"><span class="badge b-none">—</span></td>').join('')+'<td style="text-align:center"><span class="badge b-none">—</span></td></tr>';
-            return '<tr><td><b>'+u.class_assigned+'</b></td><td style="font-size:11px">'+(d.obs_date||'—')+'</td>'+CATS.map(c=>'<td style="text-align:center"><span class="badge '+badgeClass(d.ratings[c.k])+'">'+(d.ratings[c.k]!=null?d.ratings[c.k].toFixed(2):'—')+'</span></td>').join('')+'<td style="text-align:center"><span class="badge '+badgeClass(d.ratings.overall)+'">'+(d.ratings.overall!=null?d.ratings.overall.toFixed(2):'—')+'</span></td></tr>';
-          }).join('')}
-          <tr style="background:#f0f4f8;font-weight:700">
-            <td colspan="2"><b>NCR AVG — ${day}</b></td>
-            ${CATS.map(c=>'<td style="text-align:center"><span class="badge '+badgeClass(dayRegAvg[c.k])+'">'+(dayRegAvg[c.k]!=null?dayRegAvg[c.k].toFixed(2):'—')+'</span></td>').join('')}
-            <td style="text-align:center"><span class="badge ${badgeClass(dayRegAvg.overall)}">${dayRegAvg.overall!=null?dayRegAvg.overall.toFixed(2):'—'}</span></td>
-          </tr>
-        </table></div>`}
-      </div>`;
-    }).join('')}
     <div class="card"><h3>Per-Day Breakdown (All Classes)</h3>
       <div style="overflow-x:auto"><table class="cons-table">
         <tr><th>Class</th><th>Training Day</th><th>Date</th>
@@ -2231,31 +2375,47 @@ function renderHelp(){
 // SHARED UTILITIES
 // ================================================================
 async function loadAllSubs(){
-  // Supabase = source of truth. localStorage = offline fallback only.
+  // ── Supabase is the ONE AND ONLY source of truth ──
+  // localStorage is NOT used for display — only as offline fallback
+  // This ensures ALL devices see identical data always
   if(IS_SB()){
     try{
       const subs=await sbGet('me_observations','?order=class_name.asc,training_day.asc')||[];
-      window._sbStatus={ok:true,ts:new Date().toISOString()};
-      lsSave(subs); // update cache
+      window._sbStatus={ok:true,count:subs.length,ts:new Date().toISOString()};
+      // Update localStorage as offline cache only (not used for display)
+      lsSave(subs);
       return subs;
-    }catch(er){
-      console.warn('Supabase failed, using localStorage:',er);
+    }
+    catch(er){
+      console.warn('Supabase failed, using localStorage cache:',er);
       window._sbStatus={ok:false,error:er.message,ts:new Date().toISOString()};
       _showSbWarningBanner(er.message);
+      // Fallback to localStorage only if Supabase completely unreachable
+      return lsLoad();
     }
   }
-  return lsLoad();
+  // No Supabase configured — use localStorage + imported
+  const local=lsLoad();
+  const imported=lsLoadImported();
+  imported.forEach(imp=>{
+    const idx=local.findIndex(s=>s.username===imp.username&&s.training_day===imp.training_day);
+    if(idx>=0) local[idx]=imp; else local.push(imp);
+  });
+  return local;
 }
 
 function _showSbWarningBanner(errMsg){
+  // Remove existing banner first
   const old=document.getElementById('_sbLoadWarn');
   if(old)old.remove();
   const w=document.createElement('div');
   w.id='_sbLoadWarn';
   w.style.cssText='background:#fff3e0;color:#e65100;border:1.5px solid #ffb74d;border-radius:8px;padding:10px 16px;font-size:12px;font-weight:600;margin-bottom:12px;line-height:1.7';
-  w.innerHTML='⚠️ <b>Supabase sync error</b> — showing cached data only. Error: '+(errMsg||'Unknown');
+  w.innerHTML=`⚠️ <b>Supabase sync error</b> — Could not load cloud data. Showing local/imported data only.<br>
+    <span style="font-size:11px;font-weight:400">Error: ${errMsg||'Unknown'}</span><br>
+    <span style="font-size:11px;font-weight:400">Fix: Go to <b>Supabase → Authentication → Policies</b> and ensure the <code>me_observations</code> table has <b>SELECT allowed for anon role</b>.</span>`;
   const mc=document.getElementById('mainContent');
-  if(mc)mc.prepend(w);
+  if(mc) mc.prepend(w);
 }
 
 function buildReportHTML(sub,R,isAdmin){
@@ -2345,27 +2505,33 @@ function startOfficerAutosave(){
   _autosaveTimer=setInterval(async ()=>{
     if(!CU||CU.role!=='me_officer') return;
     if(!FD||!FORM_DAY) return;
-    // Check localStorage first
+    // Check BOTH localStorage AND FD status — never autosave if submitted
+    // This prevents overwriting a submitted record from another device/tab
     const recs=lsLoad().filter(r=>r.username===CU.username&&r.training_day===FORM_DAY);
     if(recs.length&&recs[0].status==='submitted') return;
-    // Also check Supabase — never autosave draft if already submitted in cloud
+    // Also check Supabase directly before autosaving — critical for multi-device protection
     if(IS_SB()){
       try{
-        const chk=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&training_day=eq.'+encodeURIComponent(FORM_DAY)+'&select=status');
-        if(chk&&chk.length&&chk[0].status==='submitted') return;
+        const sbCheck=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&training_day=eq.'+encodeURIComponent(FORM_DAY)+'&select=status');
+        if(sbCheck&&sbCheck.length&&sbCheck[0].status==='submitted'){
+          // Supabase says submitted — update localStorage and stop autosaving this day
+          if(recs.length){recs[0].status='submitted';const all=lsLoad();const idx=all.findIndex(r=>r.username===CU.username&&r.training_day===FORM_DAY);if(idx>=0){all[idx].status='submitted';lsSave(all);}}
+          return;
+        }
       }catch(e){}
     }
     try{
-      collectSec(CS);
+      collectSec(CS); // collect currently visible section
       const pl=mkPayload('draft');
       await saveObs(pl);
+      // Show a tiny subtle indicator (not disruptive)
       const ind=document.createElement('div');
       ind.style.cssText='position:fixed;bottom:8px;right:8px;background:rgba(46,125,50,.85);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;z-index:8888;opacity:1;transition:opacity 1s';
       ind.textContent='✓ Auto-saved';
       document.body.appendChild(ind);
       setTimeout(()=>{ind.style.opacity='0';setTimeout(()=>ind.remove(),1000);},2000);
     }catch(e){}
-  },120000);
+  },120000); // every 2 minutes
 }
 function stopOfficerAutosave(){ clearInterval(_autosaveTimer); }
 let _lastSubsHash='';
