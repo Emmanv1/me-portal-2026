@@ -1689,40 +1689,6 @@ function isSectionFilled(fd){
 async function renderDashboard(){
   const mc=document.getElementById('mainContent');
   mc.innerHTML='<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>';
-
-  // Auto-sync: fetch all latest records from Supabase and update localStorage
-  // This ensures superadmin always sees Supabase as source of truth
-  // and clears any stale localStorage data on any device/browser
-  if(IS_SB()){
-    try{
-      const sbAll=await sbGet('me_observations','?order=class_name.asc,training_day.asc');
-      if(sbAll&&sbAll.length){
-        const local=lsLoad();
-        sbAll.forEach(sr=>{
-          const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
-          if(idx>=0){
-            const localRec=local[idx];
-            // Never let Supabase draft overwrite local submitted
-            if(localRec.status==='submitted'&&sr.status==='draft') return;
-            const sbDate=new Date(sr.updated_at||0);
-            const lcDate=new Date(localRec.updated_at||0);
-            if(sbDate>=lcDate) local[idx]=sr;
-          } else {
-            local.push(sr);
-          }
-        });
-        // Also remove any local records that no longer exist in Supabase
-        // (e.g. deleted by superadmin) — but only drafts, never submitted
-        const sbKeys=new Set(sbAll.map(r=>r.username+'|'+r.training_day));
-        const cleaned=local.filter(r=>
-          r.status==='submitted' || // always keep submitted
-          sbKeys.has(r.username+'|'+r.training_day) // keep if exists in Supabase
-        );
-        lsSave(cleaned);
-      }
-    }catch(e){console.warn('Dashboard sync failed:',e.message);}
-  }
-
   const allSubs=await loadAllSubs();
   const submitted=allSubs.filter(s=>s.status==='submitted');
   const drafted=allSubs.filter(s=>s.status==='draft');
