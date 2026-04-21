@@ -1832,7 +1832,11 @@ window.adminDeleteDraft=async function(className,trainingDay,username){
     document.body.appendChild(t);
     setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3000);
   }catch(e){
-    alert('❌ Delete failed: '+e.message);
+    console.error('Delete error:',e.message);
+    alert('❌ Delete failed: '+e.message+'
+
+If this keeps happening, delete directly in Supabase SQL Editor:
+DELETE FROM me_observations WHERE username = \''+username+'\' AND training_day = \''+trainingDay+'\';');
   }
 };
 
