@@ -673,9 +673,26 @@ async function _loadFormData(day){
         const local=lsLoad();
         sbRecs.forEach(sr=>{
           const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
-          const sbDate=new Date(sr.updated_at||0);
-          if(idx>=0){const lcDate=new Date(local[idx].updated_at||0);if(sbDate>lcDate)local[idx]=sr;}
-          else local.push(sr);
+          if(idx>=0){
+            const localRec=local[idx];
+            // NEVER overwrite a submitted local record with a draft from Supabase
+            // This protects against the case where Supabase upsert failed silently
+            if(localRec.status==='submitted'&&sr.status==='draft'){
+              // Re-push the submitted record back to Supabase to fix the stale draft
+              const sbPayload={username:localRec.username,class_name:localRec.class_name,
+                training_day:localRec.training_day,obs_date:localRec.obs_date||null,
+                status:localRec.status,data:localRec.data,updated_at:localRec.updated_at};
+              if(localRec.submitted_at) sbPayload.submitted_at=localRec.submitted_at;
+              sbUpsert('me_observations',sbPayload).catch(e=>console.warn('Re-sync failed:',e.message));
+              return; // keep local record as-is
+            }
+            // Only overwrite if Supabase record is strictly newer
+            const sbDate=new Date(sr.updated_at||0);
+            const lcDate=new Date(localRec.updated_at||0);
+            if(sbDate>lcDate) local[idx]=sr;
+          } else {
+            local.push(sr); // new record from another device
+          }
         });
         lsSave(local);
       }
@@ -2332,16 +2349,16 @@ async function loadAllSubs(){
   }
 
   // ALWAYS merge localStorage — treat localStorage as a safety net.
-  // Whether Supabase loaded OK or not, any locally-saved record that is
-  // NEWER than what Supabase returned (or missing from Supabase entirely)
-  // should win. This handles: offline saves, failed upserts, and the case
-  // where Supabase RLS blocks cross-user reads on the anon key.
+  // submitted local record always wins over draft in Supabase (protects against silent upsert failures)
   const local=lsLoad();
   local.forEach(loc=>{
     const idx=subs.findIndex(s=>s.username===loc.username&&s.training_day===loc.training_day);
     if(idx>=0){
-      // Always prefer whichever record is more recent — regardless of source
-      const sbDate=new Date(subs[idx].updated_at||0);
+      const sbRec=subs[idx];
+      // Never let a Supabase draft overwrite a locally-submitted record
+      if(loc.status==='submitted'&&sbRec.status==='draft'){subs[idx]=loc;return;}
+      // Otherwise prefer whichever is more recent
+      const sbDate=new Date(sbRec.updated_at||0);
       const lcDate=new Date(loc.updated_at||0);
       if(lcDate>sbDate) subs[idx]=loc;
     } else {
