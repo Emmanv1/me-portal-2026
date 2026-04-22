@@ -666,27 +666,39 @@ function renderForm(selectedDay){
 }
 
 async function _loadFormData(day){
-  // ── Supabase is the ONE AND ONLY source of truth ──
-  // Always fetch fresh from Supabase — ensures same data on all devices
-  let allMyRecs=[];
   if(IS_SB()){
     try{
-      const sbRecs=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&order=training_day.asc')||[];
-      // Update localStorage as offline cache only
-      const local=lsLoad();
-      sbRecs.forEach(sr=>{
-        const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
-        if(idx>=0) local[idx]=sr; else local.push(sr);
-      });
-      lsSave(local);
-      allMyRecs=sbRecs;
-    }catch(e){
-      console.warn('Supabase fetch failed, using cache:',e.message);
-      allMyRecs=lsLoad().filter(r=>r.username===CU.username);
-    }
-  } else {
-    allMyRecs=lsLoad().filter(r=>r.username===CU.username);
+      const sbRecs=await sbGet('me_observations','?username=eq.'+encodeURIComponent(CU.username)+'&order=training_day.asc');
+      if(sbRecs&&sbRecs.length){
+        const local=lsLoad();
+        sbRecs.forEach(sr=>{
+          const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
+          if(idx>=0){
+            const localRec=local[idx];
+            // NEVER overwrite a submitted local record with a draft from Supabase
+            // This protects against the case where Supabase upsert failed silently
+            if(localRec.status==='submitted'&&sr.status==='draft'){
+              // Re-push the submitted record back to Supabase to fix the stale draft
+              const sbPayload={username:localRec.username,class_name:localRec.class_name,
+                training_day:localRec.training_day,obs_date:localRec.obs_date||null,
+                status:localRec.status,data:localRec.data,updated_at:localRec.updated_at};
+              if(localRec.submitted_at) sbPayload.submitted_at=localRec.submitted_at;
+              sbUpsert('me_observations',sbPayload).catch(e=>console.warn('Re-sync failed:',e.message));
+              return; // keep local record as-is
+            }
+            // Only overwrite if Supabase record is strictly newer
+            const sbDate=new Date(sr.updated_at||0);
+            const lcDate=new Date(localRec.updated_at||0);
+            if(sbDate>lcDate) local[idx]=sr;
+          } else {
+            local.push(sr); // new record from another device
+          }
+        });
+        lsSave(local);
+      }
+    }catch(e){console.warn('Supabase fetch failed:',e.message);}
   }
+  const allMyRecs=lsLoad().filter(r=>r.username===CU.username);
   const dayStatus={};
   allMyRecs.forEach(r=>{dayStatus[r.training_day]=r.status;});
   const existing=allMyRecs.find(r=>r.training_day===day);
@@ -1689,40 +1701,6 @@ function isSectionFilled(fd){
 async function renderDashboard(){
   const mc=document.getElementById('mainContent');
   mc.innerHTML='<div class="page-title">📊 Dashboard</div><div style="color:var(--muted);padding:10px">Loading…</div>';
-
-  // Auto-sync: fetch all latest records from Supabase and update localStorage
-  // This ensures superadmin always sees Supabase as source of truth
-  // and clears any stale localStorage data on any device/browser
-  if(IS_SB()){
-    try{
-      const sbAll=await sbGet('me_observations','?order=class_name.asc,training_day.asc');
-      if(sbAll&&sbAll.length){
-        const local=lsLoad();
-        sbAll.forEach(sr=>{
-          const idx=local.findIndex(r=>r.username===sr.username&&r.training_day===sr.training_day);
-          if(idx>=0){
-            const localRec=local[idx];
-            // Never let Supabase draft overwrite local submitted
-            if(localRec.status==='submitted'&&sr.status==='draft') return;
-            const sbDate=new Date(sr.updated_at||0);
-            const lcDate=new Date(localRec.updated_at||0);
-            if(sbDate>=lcDate) local[idx]=sr;
-          } else {
-            local.push(sr);
-          }
-        });
-        // Also remove any local records that no longer exist in Supabase
-        // (e.g. deleted by superadmin) — but only drafts, never submitted
-        const sbKeys=new Set(sbAll.map(r=>r.username+'|'+r.training_day));
-        const cleaned=local.filter(r=>
-          r.status==='submitted' || // always keep submitted
-          sbKeys.has(r.username+'|'+r.training_day) // keep if exists in Supabase
-        );
-        lsSave(cleaned);
-      }
-    }catch(e){console.warn('Dashboard sync failed:',e.message);}
-  }
-
   const allSubs=await loadAllSubs();
   const submitted=allSubs.filter(s=>s.status==='submitted');
   const drafted=allSubs.filter(s=>s.status==='draft');
@@ -2375,33 +2353,59 @@ function renderHelp(){
 // SHARED UTILITIES
 // ================================================================
 async function loadAllSubs(){
-  // ── Supabase is the ONE AND ONLY source of truth ──
-  // localStorage is NOT used for display — only as offline fallback
-  // This ensures ALL devices see identical data always
+  let subs=[];
+  let sbLoaded=false;
+  let sbError=null;
   if(IS_SB()){
     try{
-      const subs=await sbGet('me_observations','?order=class_name.asc,training_day.asc')||[];
+      subs=await sbGet('me_observations','?order=class_name.asc,training_day.asc')||[];
+      sbLoaded=true;
       window._sbStatus={ok:true,count:subs.length,ts:new Date().toISOString()};
-      // Update localStorage as offline cache only (not used for display)
-      lsSave(subs);
-      return subs;
     }
     catch(er){
-      console.warn('Supabase failed, using localStorage cache:',er);
+      console.warn('DB load failed, falling back to localStorage:',er);
+      sbError=er.message;
       window._sbStatus={ok:false,error:er.message,ts:new Date().toISOString()};
-      _showSbWarningBanner(er.message);
-      // Fallback to localStorage only if Supabase completely unreachable
-      return lsLoad();
     }
   }
-  // No Supabase configured — use localStorage + imported
+
+  // ALWAYS merge localStorage — treat localStorage as a safety net.
+  // submitted local record always wins over draft in Supabase (protects against silent upsert failures)
   const local=lsLoad();
+  local.forEach(loc=>{
+    const idx=subs.findIndex(s=>s.username===loc.username&&s.training_day===loc.training_day);
+    if(idx>=0){
+      const sbRec=subs[idx];
+      // Never let a Supabase draft overwrite a locally-submitted record
+      if(loc.status==='submitted'&&sbRec.status==='draft'){subs[idx]=loc;return;}
+      // Otherwise prefer whichever is more recent
+      const sbDate=new Date(sbRec.updated_at||0);
+      const lcDate=new Date(loc.updated_at||0);
+      if(lcDate>sbDate) subs[idx]=loc;
+    } else {
+      subs.push(loc); // record exists locally but not in Supabase yet
+    }
+  });
+
+  // Merge with imported subs (superadmin import feature)
   const imported=lsLoadImported();
   imported.forEach(imp=>{
-    const idx=local.findIndex(s=>s.username===imp.username&&s.training_day===imp.training_day);
-    if(idx>=0) local[idx]=imp; else local.push(imp);
+    const idx=subs.findIndex(s=>s.username===imp.username&&s.training_day===imp.training_day);
+    if(idx>=0){
+      const sbDate=new Date(subs[idx].updated_at||0);
+      const impDate=new Date(imp.updated_at||0);
+      if(impDate>sbDate) subs[idx]=imp;
+    } else {
+      subs.push(imp);
+    }
   });
-  return local;
+
+  // If Supabase failed, show a warning banner so superadmin knows
+  if(IS_SB()&&!sbLoaded){
+    _showSbWarningBanner(sbError);
+  }
+
+  return subs;
 }
 
 function _showSbWarningBanner(errMsg){
